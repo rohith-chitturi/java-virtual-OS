@@ -1,0 +1,21 @@
+package com.rohith.javavirtualos.command;
+
+import com.rohith.javavirtualos.shell.ShellContext;
+
+public class ExitCommand implements Command {
+    @Override
+    public boolean execute(String[] args, ShellContext context) {
+        context.getOut().println("Goodbye!");
+        return false; // Tells shell loop to stop
+    }
+
+    @Override
+    public String getName() {
+        return "exit";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Exit the virtual shell";
+    }
+}

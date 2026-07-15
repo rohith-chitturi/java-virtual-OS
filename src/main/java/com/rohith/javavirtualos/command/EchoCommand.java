@@ -1,0 +1,21 @@
+package com.rohith.javavirtualos.command;
+
+import com.rohith.javavirtualos.shell.ShellContext;
+
+public class EchoCommand implements Command {
+    @Override
+    public boolean execute(String[] args, ShellContext context) {
+        context.getOut().println(String.join(" ", args));
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return "echo";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Prints the given arguments to the terminal";
+    }
+}
