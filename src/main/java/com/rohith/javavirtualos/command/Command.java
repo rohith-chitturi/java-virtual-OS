@@ -11,9 +11,9 @@ public interface Command {
      * Executes the command.
      * @param args the arguments passed from the shell
      * @param context the shell execution context
-     * @return true to continue shell loop, false if the command requests exit
+     * @return a CommandResult containing success status and optional message
      */
-    boolean execute(String[] args, ShellContext context);
+    CommandResult execute(String[] args, ShellContext context);
 
     /**
      * @return the name of the command

@@ -12,12 +12,12 @@ public class HelpCommand implements Command {
     }
 
     @Override
-    public boolean execute(String[] args, ShellContext context) {
-        context.getOut().println("Available Commands:");
+    public CommandResult execute(String[] args, ShellContext context) {
+        StringBuilder sb = new StringBuilder("Available Commands:\n");
         for (Command cmd : registry.getAllCommands()) {
-            context.getOut().printf("  %-10s - %s%n", cmd.getName(), cmd.getDescription());
+            sb.append(String.format("  %-10s - %s%n", cmd.getName(), cmd.getDescription()));
         }
-        return true;
+        return CommandResult.success(sb.toString().trim());
     }
 
     @Override

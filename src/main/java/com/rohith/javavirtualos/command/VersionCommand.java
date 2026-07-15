@@ -4,9 +4,8 @@ import com.rohith.javavirtualos.shell.ShellContext;
 
 public class VersionCommand implements Command {
     @Override
-    public boolean execute(String[] args, ShellContext context) {
-        context.getOut().println(context.getSystemContext().getOsName() + " v" + context.getSystemContext().getOsVersion());
-        return true;
+    public CommandResult execute(String[] args, ShellContext context) {
+        return CommandResult.success(context.getSystemContext().getOsName() + " v" + context.getSystemContext().getOsVersion());
     }
 
     @Override

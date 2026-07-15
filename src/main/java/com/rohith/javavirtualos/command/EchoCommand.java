@@ -4,9 +4,8 @@ import com.rohith.javavirtualos.shell.ShellContext;
 
 public class EchoCommand implements Command {
     @Override
-    public boolean execute(String[] args, ShellContext context) {
-        context.getOut().println(String.join(" ", args));
-        return true;
+    public CommandResult execute(String[] args, ShellContext context) {
+        return CommandResult.success(String.join(" ", args));
     }
 
     @Override

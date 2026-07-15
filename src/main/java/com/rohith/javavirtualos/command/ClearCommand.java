@@ -4,11 +4,11 @@ import com.rohith.javavirtualos.shell.ShellContext;
 
 public class ClearCommand implements Command {
     @Override
-    public boolean execute(String[] args, ShellContext context) {
+    public CommandResult execute(String[] args, ShellContext context) {
         // Simple cross-platform terminal clear using ANSI escape sequences
         context.getOut().print("\033[H\033[2J");
         context.getOut().flush();
-        return true;
+        return CommandResult.success();
     }
 
     @Override

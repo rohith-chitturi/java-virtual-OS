@@ -4,9 +4,8 @@ import com.rohith.javavirtualos.shell.ShellContext;
 
 public class PwdCommand implements Command {
     @Override
-    public boolean execute(String[] args, ShellContext context) {
-        context.getOut().println(context.getCurrentDirectory());
-        return true;
+    public CommandResult execute(String[] args, ShellContext context) {
+        return CommandResult.success(context.getCurrentDirectory());
     }
 
     @Override
