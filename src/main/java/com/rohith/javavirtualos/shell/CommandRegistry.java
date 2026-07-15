@@ -16,8 +16,11 @@ public class CommandRegistry {
         this.commands = new HashMap<>();
     }
 
-    public void register(Command command) {
+    public void register(Command command, String... aliases) {
         commands.put(command.getName().toLowerCase(), command);
+        for (String alias : aliases) {
+            commands.put(alias.toLowerCase(), command);
+        }
     }
 
     public Command getCommand(String name) {

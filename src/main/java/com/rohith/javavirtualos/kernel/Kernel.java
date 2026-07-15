@@ -19,16 +19,20 @@ public class Kernel {
         // 2. Initialize System Context
         this.systemContext = new SystemContext(configManager);
         
-        // Future phases will initialize MemoryManager, FileSystemManager, etc.
         System.out.println("[ OK ] Initializing Memory Manager"); // Stub output
-        System.out.println("[ OK ] Mounting Virtual File System"); // Stub output
+        
+        // File System Initialization
+        System.out.println("[ OK ] Mounting Virtual File System");
+        com.rohith.javavirtualos.filesystem.FileSystemManager fsManager = new com.rohith.javavirtualos.filesystem.FileSystemManager();
+        com.rohith.javavirtualos.services.FileSystemService fsService = new com.rohith.javavirtualos.services.DefaultFileSystemService(fsManager);
+
         System.out.println("[ OK ] Loading Command Registry");
         System.out.println("[ OK ] Starting Process Manager"); // Stub output
         System.out.println("[ OK ] Initializing Security Manager"); // Stub output
         
         // 3. Initialize Shell
         System.out.println("[ OK ] Starting Virtual Shell");
-        this.shell = new Shell(systemContext);
+        this.shell = new Shell(systemContext, fsService);
     }
 
     public void startShell() {

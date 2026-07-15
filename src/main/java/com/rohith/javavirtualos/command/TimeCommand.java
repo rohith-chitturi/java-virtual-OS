@@ -6,10 +6,9 @@ import java.time.format.DateTimeFormatter;
 
 public class TimeCommand implements Command {
     @Override
-    public boolean execute(String[] args, ShellContext context) {
+    public CommandResult execute(String[] args, ShellContext context) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-        context.getOut().println(LocalTime.now().format(formatter));
-        return true;
+        return CommandResult.success(LocalTime.now().format(formatter));
     }
 
     @Override

@@ -4,9 +4,8 @@ import com.rohith.javavirtualos.shell.ShellContext;
 
 public class ExitCommand implements Command {
     @Override
-    public boolean execute(String[] args, ShellContext context) {
-        context.getOut().println("Goodbye!");
-        return false; // Tells shell loop to stop
+    public CommandResult execute(String[] args, ShellContext context) {
+        return CommandResult.terminate("Goodbye!");
     }
 
     @Override

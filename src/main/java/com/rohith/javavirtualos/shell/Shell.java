@@ -16,8 +16,11 @@ public class Shell {
     private final CommandRegistry commandRegistry;
     private final List<String> history;
 
-    public Shell(SystemContext systemContext) {
+    private final com.rohith.javavirtualos.services.FileSystemService fsService;
+
+    public Shell(SystemContext systemContext, com.rohith.javavirtualos.services.FileSystemService fsService) {
         this.systemContext = systemContext;
+        this.fsService = fsService;
         this.shellContext = new ShellContext(systemContext, System.out, System.in);
         this.commandRegistry = new CommandRegistry();
         this.history = new ArrayList<>();
@@ -34,6 +37,18 @@ public class Shell {
         commandRegistry.register(new VersionCommand());
         commandRegistry.register(new HelpCommand(commandRegistry));
         commandRegistry.register(new HistoryCommand(history));
+        
+        // FS Commands
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.MkdirCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.RmdirCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.TouchCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.RmCommand(fsService), "delete", "del");
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.CdCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.LsCommand(fsService), "dir");
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.TreeCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.CatCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.WriteCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.AppendCommand(fsService));
     }
 
     public void start() {
@@ -57,7 +72,13 @@ public class Shell {
             Command command = commandRegistry.getCommand(commandName);
             if (command != null) {
                 try {
-                    running = command.execute(args, shellContext);
+                    CommandResult result = command.execute(args, shellContext);
+                    if (result.getMessage() != null && !result.getMessage().isEmpty()) {
+                        shellContext.getOut().println(result.getMessage());
+                    }
+                    if (result.shouldTerminateShell()) {
+                        running = false;
+                    }
                 } catch (Exception e) {
                     shellContext.getOut().println("Error executing command: " + e.getMessage());
                 }

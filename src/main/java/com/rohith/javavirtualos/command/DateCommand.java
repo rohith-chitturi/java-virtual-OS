@@ -5,9 +5,8 @@ import java.time.LocalDate;
 
 public class DateCommand implements Command {
     @Override
-    public boolean execute(String[] args, ShellContext context) {
-        context.getOut().println(LocalDate.now());
-        return true;
+    public CommandResult execute(String[] args, ShellContext context) {
+        return CommandResult.success(LocalDate.now().toString());
     }
 
     @Override

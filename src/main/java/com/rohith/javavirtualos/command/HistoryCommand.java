@@ -12,12 +12,13 @@ public class HistoryCommand implements Command {
     }
 
     @Override
-    public boolean execute(String[] args, ShellContext context) {
+    public CommandResult execute(String[] args, ShellContext context) {
+        StringBuilder sb = new StringBuilder();
         int index = 1;
         for (String entry : history) {
-            context.getOut().printf("%5d  %s%n", index++, entry);
+            sb.append(String.format("%5d  %s%n", index++, entry));
         }
-        return true;
+        return CommandResult.success(sb.toString().trim());
     }
 
     @Override
