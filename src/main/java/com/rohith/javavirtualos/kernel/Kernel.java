@@ -4,6 +4,9 @@ import com.rohith.javavirtualos.shell.Shell;
 import com.rohith.javavirtualos.filesystem.FileSystemManager;
 import com.rohith.javavirtualos.services.FileSystemService;
 import com.rohith.javavirtualos.services.DefaultFileSystemService;
+import com.rohith.javavirtualos.kernel.process.ProcessManager;
+import com.rohith.javavirtualos.services.ProcessService;
+import com.rohith.javavirtualos.services.DefaultProcessService;
 
 /**
  * The central coordinator for the virtual operating system.
@@ -15,6 +18,7 @@ public class Kernel {
     private Shell shell;
     private UserManager userManager;
     private SecurityManager securityManager;
+    private ProcessManager processManager;
 
     public void initialize() {
         // 1. Initialize Configuration
@@ -32,7 +36,10 @@ public class Kernel {
         FileSystemService fsService = new DefaultFileSystemService(fsManager);
 
         System.out.println("[ OK ] Loading Command Registry");
-        System.out.println("[ OK ] Starting Process Manager"); // Stub output
+        System.out.println("[ OK ] Starting Process Manager");
+        this.processManager = new ProcessManager();
+        ProcessService processService = new DefaultProcessService(processManager);
+
         System.out.println("[ OK ] Initializing Security Manager");
         this.securityManager = new SecurityManager();
         this.userManager = new UserManager();
@@ -40,7 +47,7 @@ public class Kernel {
         
         // 3. Initialize Shell
         System.out.println("[ OK ] Starting Virtual Shell");
-        this.shell = new Shell(systemContext, fsService, userManager);
+        this.shell = new Shell(systemContext, fsService, processService, userManager);
     }
 
     public void startShell() {
