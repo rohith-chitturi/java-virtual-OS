@@ -43,7 +43,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult makeDirectory(String path, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            manager.createDirectory(path, currentDir, "root");
+            manager.createDirectory(path, currentDir, context.getCurrentUser());
             return CommandResult.success();
         } catch (FileSystemException e) {
             return CommandResult.failure(e.getMessage());
@@ -54,7 +54,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult removeDirectory(String path, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            manager.remove(path, currentDir, true);
+            manager.remove(path, currentDir, true, context.getCurrentUser());
             return CommandResult.success();
         } catch (FileSystemException e) {
             return CommandResult.failure(e.getMessage());
@@ -65,7 +65,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult removeFile(String path, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            manager.remove(path, currentDir, false);
+            manager.remove(path, currentDir, false, context.getCurrentUser());
             return CommandResult.success();
         } catch (FileSystemException e) {
             return CommandResult.failure(e.getMessage());
@@ -88,7 +88,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult touchFile(String path, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            manager.createFile(path, currentDir, "root");
+            manager.createFile(path, currentDir, context.getCurrentUser());
             return CommandResult.success();
         } catch (FileSystemException e) {
             return CommandResult.failure(e.getMessage());
@@ -128,6 +128,7 @@ public class DefaultFileSystemService implements FileSystemService {
             if (node == null) return CommandResult.failure("File not found: " + path);
             if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
             
+            manager.validateReadAccess(node, context.getCurrentUser());
             return CommandResult.success(((FileNode) node).getContent());
         } catch (FileSystemException e) {
             return CommandResult.failure(e.getMessage());
@@ -140,11 +141,12 @@ public class DefaultFileSystemService implements FileSystemService {
             DirectoryNode currentDir = getCurrentDir(context);
             Inode node = manager.resolvePath(path, currentDir);
             if (node == null) {
-                manager.createFile(path, currentDir, "root");
+                manager.createFile(path, currentDir, context.getCurrentUser());
                 node = manager.resolvePath(path, currentDir);
             }
             if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
             
+            manager.validateWriteAccess(node, context.getCurrentUser());
             ((FileNode) node).setContent(content);
             return CommandResult.success();
         } catch (FileSystemException e) {
@@ -160,6 +162,7 @@ public class DefaultFileSystemService implements FileSystemService {
             if (node == null) return CommandResult.failure("File not found: " + path);
             if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
             
+            manager.validateWriteAccess(node, context.getCurrentUser());
             ((FileNode) node).appendContent(content);
             return CommandResult.success();
         } catch (FileSystemException e) {
