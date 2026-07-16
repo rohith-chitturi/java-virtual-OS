@@ -18,11 +18,13 @@ public class Shell {
     private final List<String> history;
 
     private final com.rohith.javavirtualos.services.FileSystemService fsService;
+    private final com.rohith.javavirtualos.services.ProcessService processService;
     private final UserManager userManager;
 
-    public Shell(SystemContext systemContext, com.rohith.javavirtualos.services.FileSystemService fsService, UserManager userManager) {
+    public Shell(SystemContext systemContext, com.rohith.javavirtualos.services.FileSystemService fsService, com.rohith.javavirtualos.services.ProcessService processService, UserManager userManager) {
         this.systemContext = systemContext;
         this.fsService = fsService;
+        this.processService = processService;
         this.userManager = userManager;
         this.shellContext = new ShellContext(systemContext, userManager.getUser("root"), System.out, System.in);
         this.commandRegistry = new CommandRegistry();
@@ -45,6 +47,11 @@ public class Shell {
         commandRegistry.register(new WhoamiCommand());
         commandRegistry.register(new SuCommand(userManager));
         commandRegistry.register(new UseraddCommand(userManager));
+        
+        // Process Commands
+        commandRegistry.register(new PsCommand(processService));
+        commandRegistry.register(new KillCommand(processService));
+        commandRegistry.register(new SleepCommand());
         
         // FS Commands
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.MkdirCommand(fsService));
@@ -79,16 +86,31 @@ public class Shell {
 
             Command command = commandRegistry.getCommand(commandName);
             if (command != null) {
-                try {
-                    CommandResult result = command.execute(args, shellContext);
-                    if (result.getMessage() != null && !result.getMessage().isEmpty()) {
-                        shellContext.getOut().println(result.getMessage());
+                boolean isBackground = false;
+                if (args.length > 0 && args[args.length - 1].equals("&")) {
+                    isBackground = true;
+                    String[] newArgs = new String[args.length - 1];
+                    System.arraycopy(args, 0, newArgs, 0, args.length - 1);
+                    args = newArgs;
+                }
+                
+                final String[] finalArgs = args;
+                if (isBackground) {
+                    processService.executeAsProcess(input.replace(" &", ""), () -> {
+                        command.execute(finalArgs, shellContext);
+                    }, shellContext);
+                } else {
+                    try {
+                        CommandResult result = command.execute(finalArgs, shellContext);
+                        if (result.getMessage() != null && !result.getMessage().isEmpty()) {
+                            shellContext.getOut().println(result.getMessage());
+                        }
+                        if (result.shouldTerminateShell()) {
+                            running = false;
+                        }
+                    } catch (Exception e) {
+                        shellContext.getOut().println("Error executing command: " + e.getMessage());
                     }
-                    if (result.shouldTerminateShell()) {
-                        running = false;
-                    }
-                } catch (Exception e) {
-                    shellContext.getOut().println("Error executing command: " + e.getMessage());
                 }
             } else {
                 shellContext.getOut().println(commandName + ": command not found");
