@@ -1,6 +1,7 @@
 package com.rohith.javavirtualos.shell;
 
 import com.rohith.javavirtualos.kernel.SystemContext;
+import com.rohith.javavirtualos.kernel.UserManager;
 import com.rohith.javavirtualos.command.*;
 import java.util.Scanner;
 import java.util.List;
@@ -17,11 +18,13 @@ public class Shell {
     private final List<String> history;
 
     private final com.rohith.javavirtualos.services.FileSystemService fsService;
+    private final UserManager userManager;
 
-    public Shell(SystemContext systemContext, com.rohith.javavirtualos.services.FileSystemService fsService) {
+    public Shell(SystemContext systemContext, com.rohith.javavirtualos.services.FileSystemService fsService, UserManager userManager) {
         this.systemContext = systemContext;
         this.fsService = fsService;
-        this.shellContext = new ShellContext(systemContext, System.out, System.in);
+        this.userManager = userManager;
+        this.shellContext = new ShellContext(systemContext, userManager.getUser("root"), System.out, System.in);
         this.commandRegistry = new CommandRegistry();
         this.history = new ArrayList<>();
         registerBuiltInCommands();
@@ -37,6 +40,11 @@ public class Shell {
         commandRegistry.register(new VersionCommand());
         commandRegistry.register(new HelpCommand(commandRegistry));
         commandRegistry.register(new HistoryCommand(history));
+        
+        // User Commands
+        commandRegistry.register(new WhoamiCommand());
+        commandRegistry.register(new SuCommand(userManager));
+        commandRegistry.register(new UseraddCommand(userManager));
         
         // FS Commands
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.MkdirCommand(fsService));

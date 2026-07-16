@@ -2,6 +2,7 @@ package com.rohith.javavirtualos.filesystem;
 
 import com.rohith.javavirtualos.exceptions.FileSystemException;
 import com.rohith.javavirtualos.filesystem.model.DirectoryNode;
+import com.rohith.javavirtualos.kernel.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -11,6 +12,7 @@ public class FileSystemValidatorTest {
     private FileSystemValidator validator;
     private DirectoryNode root;
     private DirectoryNode userDir;
+    private User testUser;
 
     @BeforeEach
     public void setUp() {
@@ -18,6 +20,7 @@ public class FileSystemValidatorTest {
         root = new DirectoryNode("", "root", null);
         userDir = new DirectoryNode("user", "user", root);
         root.addChild(userDir);
+        testUser = new User("user", "pass");
     }
 
     @Test
@@ -48,16 +51,16 @@ public class FileSystemValidatorTest {
         DirectoryNode subDir = new DirectoryNode("docs", "user", userDir);
         userDir.addChild(subDir);
         
-        assertThrows(FileSystemException.class, () -> validator.validateCreation(userDir, "docs"));
+        assertThrows(FileSystemException.class, () -> validator.validateCreation(userDir, "docs", testUser));
     }
 
     @Test
     public void testValidateDeletionRoot() {
-        assertThrows(FileSystemException.class, () -> validator.validateDeletion(root, userDir));
+        assertThrows(FileSystemException.class, () -> validator.validateDeletion(root, userDir, testUser));
     }
 
     @Test
     public void testValidateDeletionCurrentActive() {
-        assertThrows(FileSystemException.class, () -> validator.validateDeletion(userDir, userDir));
+        assertThrows(FileSystemException.class, () -> validator.validateDeletion(userDir, userDir, testUser));
     }
 }
