@@ -5,16 +5,14 @@ public class SchedulingInfo {
     private long arrivalTime;
     private long burstTime;
     private long remainingTime;
-    private long waitingTime;
-    private long turnAroundTime;
+    private final ProcessStatistics statistics;
 
     public SchedulingInfo(int priority, long arrivalTime) {
         this.priority = priority;
         this.arrivalTime = arrivalTime;
         this.burstTime = 0;
         this.remainingTime = 0;
-        this.waitingTime = 0;
-        this.turnAroundTime = 0;
+        this.statistics = new ProcessStatistics();
     }
 
     public int getPriority() { return priority; }
@@ -29,9 +27,5 @@ public class SchedulingInfo {
     public long getRemainingTime() { return remainingTime; }
     public void setRemainingTime(long remainingTime) { this.remainingTime = remainingTime; }
     
-    public long getWaitingTime() { return waitingTime; }
-    public void setWaitingTime(long waitingTime) { this.waitingTime = waitingTime; }
-    
-    public long getTurnAroundTime() { return turnAroundTime; }
-    public void setTurnAroundTime(long turnAroundTime) { this.turnAroundTime = turnAroundTime; }
+    public ProcessStatistics getStatistics() { return statistics; }
 }

@@ -6,4 +6,6 @@ public interface Scheduler {
     void addProcess(ProcessControlBlock pcb);
     void removeProcess(ProcessControlBlock pcb);
     ProcessControlBlock nextProcess();
+    ReadyQueue getReadyQueue();
+    String getName();
 }
