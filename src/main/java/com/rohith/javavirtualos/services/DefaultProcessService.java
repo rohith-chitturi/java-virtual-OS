@@ -1,8 +1,9 @@
 package com.rohith.javavirtualos.services;
 
 import com.rohith.javavirtualos.command.CommandResult;
-import com.rohith.javavirtualos.kernel.process.ProcessManager;
-import com.rohith.javavirtualos.kernel.process.VirtualProcess;
+import com.rohith.javavirtualos.kernel.process.manager.ProcessManager;
+import com.rohith.javavirtualos.kernel.process.manager.ProcessTask;
+import com.rohith.javavirtualos.kernel.process.pcb.ProcessControlBlock;
 import com.rohith.javavirtualos.shell.ShellContext;
 
 import java.util.List;
@@ -17,15 +18,16 @@ public class DefaultProcessService implements ProcessService {
 
     @Override
     public CommandResult listProcesses(ShellContext context) {
-        List<VirtualProcess> processes = manager.listProcesses();
+        List<ProcessControlBlock> processes = manager.listProcesses();
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%-6s %-10s %-12s %s\n", "PID", "USER", "STATE", "COMMAND"));
-        for (VirtualProcess p : processes) {
-            sb.append(String.format("%-6d %-10s %-12s %s\n", 
+        sb.append(String.format("%-6s %-12s %-12s %-5s %s\n", "PID", "NAME", "STATE", "PRI", "MEM(KB)"));
+        for (ProcessControlBlock p : processes) {
+            sb.append(String.format("%-6d %-12s %-12s %-5d %d\n", 
                 p.getPid(), 
-                p.getOwner().getUsername(), 
+                p.getCommandName(), 
                 p.getState(), 
-                p.getName()));
+                p.getSchedulingInfo().getPriority(),
+                p.getResourceInfo().getMemoryUsage() / 1024));
         }
         return CommandResult.success(sb.toString().trim());
     }
@@ -33,20 +35,22 @@ public class DefaultProcessService implements ProcessService {
     @Override
     public CommandResult killProcess(int pid, ShellContext context) {
         try {
-            boolean success = manager.killProcess(pid, context.getCurrentUser());
-            if (success) {
-                return CommandResult.success("Process " + pid + " terminated.");
-            } else {
-                return CommandResult.failure("kill: process " + pid + " not found.");
-            }
-        } catch (SecurityException e) {
+            manager.terminateProcess(pid, context.getCurrentUser());
+            return CommandResult.success("Process " + pid + " terminated.");
+        } catch (Exception e) {
             return CommandResult.failure(e.getMessage());
         }
     }
 
     @Override
     public void executeAsProcess(String name, Runnable task, ShellContext context) {
-        VirtualProcess process = manager.spawnProcess(name, context.getCurrentUser(), task);
-        context.getOut().println("[" + process.getPid() + "] " + name + " started in background");
+        ProcessTask pTask = new ProcessTask(task);
+        ProcessControlBlock pcb = manager.createProcess(name, context.getCurrentUser(), pTask, 1);
+        manager.startProcess(pcb.getPid());
+        context.getOut().println("[" + pcb.getPid() + "] " + name + " started in background");
+    }
+    
+    public ProcessManager getManager() {
+        return manager;
     }
 }

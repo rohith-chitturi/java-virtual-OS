@@ -50,6 +50,7 @@ public class Shell {
         
         // Process Commands
         commandRegistry.register(new PsCommand(processService));
+        commandRegistry.register(new PstreeCommand(processService));
         commandRegistry.register(new KillCommand(processService));
         commandRegistry.register(new SleepCommand());
         
