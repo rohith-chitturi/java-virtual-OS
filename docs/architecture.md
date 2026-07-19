@@ -22,9 +22,18 @@ Java Virtual OS uses Clean Architecture and SOLID principles. The **Kernel** act
 ## Boot Sequence
 `JavaVirtualOS (Main)` -> `BootLoader` -> `Kernel` -> Managers Init -> `Shell` Start
 
-## Future Roadmap
-- Phase 1: Virtual Shell
-- Phase 2: Virtual File System & Storage
-- Phase 3: User & Security
-- Phase 4: Process Management & Scheduler
-- Phase 5: Memory Management
+## OS Simulation Roadmap
+This project follows a 12-phase roadmap to build a fully-fledged Operating System Simulation Platform:
+
+- Phase 1: Kernel & Boot
+- Phase 2: Virtual File System
+- Phase 3: Users & Security
+- Phase 4: Process Management
+- Phase 5: CPU Scheduling
+- Phase 6: Memory Management
+- Phase 7: Virtual Memory & Paging
+- Phase 8: IPC (Pipes, Shared Memory)
+- Phase 9: Deadlock Detection
+- Phase 10: Networking
+- Phase 11: Device Management
+- Phase 12: JavaFX Desktop Environment
