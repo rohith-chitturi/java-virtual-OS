@@ -26,3 +26,35 @@ public class OutOfMemoryEvent extends MemoryEvent {
     }
     @Override public String getMessage() { return "OOM: PID " + pid + " failed to allocate " + requested; }
 }
+
+public class TLBHitEvent extends MemoryEvent {
+    private final com.rohith.javavirtualos.kernel.memory.virtual.VirtualAddress address;
+    public TLBHitEvent(com.rohith.javavirtualos.kernel.memory.virtual.VirtualAddress address) { this.address = address; }
+    @Override public String getMessage() { return "TLB Hit: " + address; }
+}
+
+public class TLBMissEvent extends MemoryEvent {
+    private final com.rohith.javavirtualos.kernel.memory.virtual.VirtualAddress address;
+    public TLBMissEvent(com.rohith.javavirtualos.kernel.memory.virtual.VirtualAddress address) { this.address = address; }
+    @Override public String getMessage() { return "TLB Miss: " + address; }
+}
+
+public class PageFaultEvent extends MemoryEvent {
+    private final com.rohith.javavirtualos.kernel.memory.virtual.VirtualAddress address;
+    public PageFaultEvent(com.rohith.javavirtualos.kernel.memory.virtual.VirtualAddress address) { this.address = address; }
+    @Override public String getMessage() { return "Page Fault: " + address; }
+}
+
+public class PageLoadedEvent extends MemoryEvent {
+    private final com.rohith.javavirtualos.kernel.memory.virtual.Page page;
+    private final com.rohith.javavirtualos.kernel.memory.virtual.Frame frame;
+    public PageLoadedEvent(com.rohith.javavirtualos.kernel.memory.virtual.Page page, com.rohith.javavirtualos.kernel.memory.virtual.Frame frame) { this.page = page; this.frame = frame; }
+    @Override public String getMessage() { return "Page Loaded: " + page + " -> " + frame; }
+}
+
+public class PageEvictedEvent extends MemoryEvent {
+    private final com.rohith.javavirtualos.kernel.memory.virtual.Page page;
+    private final com.rohith.javavirtualos.kernel.memory.virtual.Frame frame;
+    public PageEvictedEvent(com.rohith.javavirtualos.kernel.memory.virtual.Page page, com.rohith.javavirtualos.kernel.memory.virtual.Frame frame) { this.page = page; this.frame = frame; }
+    @Override public String getMessage() { return "Page Evicted: " + page + " from " + frame; }
+}
