@@ -2,9 +2,8 @@ package com.rohith.javavirtualos.kernel.vfs;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.EnumSet;
+import com.rohith.javavirtualos.kernel.security.PermissionBits;
 import java.util.List;
-import java.util.Set;
 
 public class INode {
     private static long nextId = 1;
@@ -12,7 +11,8 @@ public class INode {
     private final long id;
     private final FileType type;
     private int ownerUid;
-    private Set<Permission> permissions;
+    private int ownerGid;
+    private PermissionBits permissions;
     
     private Instant createdAt;
     private Instant modifiedAt;
@@ -20,11 +20,12 @@ public class INode {
     
     private final List<DataBlock> blocks;
     
-    public INode(FileType type, int ownerUid, Set<Permission> permissions) {
+    public INode(FileType type, int ownerUid, int ownerGid, PermissionBits permissions) {
         this.id = nextId++;
         this.type = type;
         this.ownerUid = ownerUid;
-        this.permissions = EnumSet.copyOf(permissions);
+        this.ownerGid = ownerGid;
+        this.permissions = permissions;
         this.createdAt = Instant.now();
         this.modifiedAt = this.createdAt;
         this.accessedAt = this.createdAt;
@@ -37,8 +38,11 @@ public class INode {
     public int getOwnerUid() { return ownerUid; }
     public void setOwnerUid(int ownerUid) { this.ownerUid = ownerUid; }
     
-    public Set<Permission> getPermissions() { return permissions; }
-    public void setPermissions(Set<Permission> permissions) { this.permissions = EnumSet.copyOf(permissions); }
+    public int getOwnerGid() { return ownerGid; }
+    public void setOwnerGid(int ownerGid) { this.ownerGid = ownerGid; }
+    
+    public PermissionBits getPermissions() { return permissions; }
+    public void setPermissions(PermissionBits permissions) { this.permissions = permissions; }
     
     public Instant getCreatedAt() { return createdAt; }
     public Instant getModifiedAt() { return modifiedAt; }
