@@ -6,12 +6,17 @@ import com.rohith.javavirtualos.kernel.process.state.ProcessState;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import com.rohith.javavirtualos.kernel.ipc.Signal;
 
 public class ProcessControlBlock {
     private final int pid;
     private final int parentPid;
     private final List<Integer> childrenPids;
     private ProcessState state;
+    private int ownerUid;
+    private final Queue<Signal> pendingSignals;
     private final ProcessTask task;
     private Thread thread;
     private final SchedulingInfo schedulingInfo;
@@ -31,6 +36,7 @@ public class ProcessControlBlock {
         this.schedulingInfo = scheduling;
         this.resourceInfo = resource;
         this.state = ProcessState.NEW;
+        this.pendingSignals = new ConcurrentLinkedQueue<>();
     }
 
     public void addChild(int childPid) {
@@ -42,6 +48,21 @@ public class ProcessControlBlock {
     public List<Integer> getChildrenPids() { return childrenPids; }
     public ProcessState getState() { return state; }
     public void setState(ProcessState state) { this.state = state; }
+    public int getOwnerUid() { return ownerUid; }
+    public void setOwnerUid(int ownerUid) { this.ownerUid = ownerUid; }
+
+    public void enqueueSignal(Signal signal) {
+        pendingSignals.offer(signal);
+    }
+    
+    public Signal dequeueSignal() {
+        return pendingSignals.poll();
+    }
+    
+    public boolean hasPendingSignals() {
+        return !pendingSignals.isEmpty();
+    }
+
     public ProcessTask getTask() { return task; }
     public Thread getThread() { return thread; }
     public void setThread(Thread thread) { this.thread = thread; }
