@@ -4,12 +4,17 @@ import com.rohith.javavirtualos.kernel.device.DeviceDescriptor;
 import com.rohith.javavirtualos.kernel.device.DeviceDriver;
 import com.rohith.javavirtualos.kernel.device.DeviceState;
 import com.rohith.javavirtualos.kernel.device.DeviceType;
+import com.rohith.javavirtualos.kernel.device.DeviceCapability;
+import java.util.EnumSet;
 
 public class NullDevice implements DeviceDriver {
     private final DeviceDescriptor descriptor;
 
     public NullDevice() {
-        this.descriptor = new DeviceDescriptor("null", DeviceType.CHARACTER, "1.0");
+        this.descriptor = new DeviceDescriptor(
+            "null", DeviceType.CHARACTER, "1.0", "JavaVirtualOS", "Bit bucket",
+            EnumSet.of(DeviceCapability.WRITE)
+        );
     }
 
     @Override
@@ -35,5 +40,10 @@ public class NullDevice implements DeviceDriver {
     @Override
     public int write(byte[] data) {
         return data.length; // Discard and say it was all written
+    }
+
+    @Override
+    public boolean healthCheck() {
+        return true;
     }
 }

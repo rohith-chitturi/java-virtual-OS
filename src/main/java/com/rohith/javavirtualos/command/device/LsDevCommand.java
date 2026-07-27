@@ -5,6 +5,9 @@ import com.rohith.javavirtualos.command.CommandResult;
 import com.rohith.javavirtualos.shell.ShellContext;
 import com.rohith.javavirtualos.kernel.device.DeviceManager;
 import com.rohith.javavirtualos.kernel.device.DeviceDriver;
+import com.rohith.javavirtualos.kernel.device.DeviceCapability;
+
+import java.util.stream.Collectors;
 
 public class LsDevCommand implements Command {
     private final DeviceManager deviceManager;
@@ -26,15 +29,20 @@ public class LsDevCommand implements Command {
     @Override
     public CommandResult execute(String[] args, ShellContext context) {
         context.getOut().println("Registered Devices:");
-        context.getOut().printf("%-15s %-10s %-15s %-10s%n", "NAME", "TYPE", "MOUNT", "STATE");
-        context.getOut().println("-".repeat(50));
+        context.getOut().printf("%-10s %-12s %-15s %-10s %-25s%n", "NAME", "TYPE", "VENDOR", "STATE", "CAPABILITIES");
+        context.getOut().println("-".repeat(75));
         
         for (DeviceDriver driver : deviceManager.getRegistry().getAllDrivers()) {
-            context.getOut().printf("%-15s %-10s %-15s %-10s%n", 
+            String caps = driver.getDescriptor().getCapabilities().stream()
+                .map(DeviceCapability::name)
+                .collect(Collectors.joining(", "));
+
+            context.getOut().printf("%-10s %-12s %-15s %-10s %-25s%n", 
                 driver.getDescriptor().getName(), 
                 driver.getDescriptor().getType(),
-                driver.getDescriptor().getMountPath(),
-                driver.getDescriptor().getState());
+                driver.getDescriptor().getVendor(),
+                driver.getDescriptor().getState(),
+                caps);
         }
         return CommandResult.success();
     }

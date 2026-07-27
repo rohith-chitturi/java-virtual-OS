@@ -13,16 +13,19 @@ public class DeviceManager {
     private final DeviceStatistics statistics;
     private final KernelEventBus eventBus;
     private final FileSystemManager fileSystemManager;
+    private final DeviceValidator validator;
 
     public DeviceManager(KernelEventBus eventBus, FileSystemManager fileSystemManager) {
         this.registry = new DeviceRegistry();
         this.statistics = new DeviceStatistics();
         this.eventBus = eventBus;
         this.fileSystemManager = fileSystemManager;
+        this.validator = new DeviceValidator();
     }
 
     public void registerDevice(DeviceDriver driver) {
         try {
+            validator.validateRegistration(driver, registry);
             driver.init();
             statistics.recordInit();
             registry.register(driver);
@@ -35,10 +38,12 @@ public class DeviceManager {
             fileSystemManager.mountDevice(mountPath, deviceNode);
             eventBus.publish(new DeviceMountedEvent(driver.getDescriptor()));
             
-        } catch (IOException | FileSystemException e) {
+        } catch (IOException | FileSystemException | IllegalArgumentException e) {
             statistics.recordError();
-            eventBus.publish(new DeviceFailureEvent(driver.getDescriptor(), "Init failed: " + e.getMessage()));
-            driver.getDescriptor().setState(DeviceState.FAILED);
+            if (driver != null && driver.getDescriptor() != null) {
+                eventBus.publish(new DeviceFailureEvent(driver.getDescriptor(), "Init failed: " + e.getMessage()));
+                driver.getDescriptor().setState(DeviceState.FAILED);
+            }
         }
     }
 

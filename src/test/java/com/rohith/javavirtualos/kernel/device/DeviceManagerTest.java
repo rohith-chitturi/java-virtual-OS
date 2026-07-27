@@ -32,4 +32,17 @@ class DeviceManagerTest {
         assertNull(deviceManager.getRegistry().getDriver("null"));
         assertEquals(DeviceState.OFFLINE, nullDev.getDescriptor().getState());
     }
+
+    @Test
+    void testDuplicateRegistrationFails() {
+        NullDevice dev1 = new NullDevice();
+        deviceManager.registerDevice(dev1);
+        
+        NullDevice dev2 = new NullDevice();
+        deviceManager.registerDevice(dev2);
+        
+        // dev2 should fail validation and be marked FAILED
+        assertEquals(DeviceState.ONLINE, dev1.getDescriptor().getState());
+        assertEquals(DeviceState.FAILED, dev2.getDescriptor().getState());
+    }
 }

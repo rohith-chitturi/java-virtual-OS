@@ -4,6 +4,8 @@ import com.rohith.javavirtualos.kernel.device.DeviceDescriptor;
 import com.rohith.javavirtualos.kernel.device.DeviceDriver;
 import com.rohith.javavirtualos.kernel.device.DeviceState;
 import com.rohith.javavirtualos.kernel.device.DeviceType;
+import com.rohith.javavirtualos.kernel.device.DeviceCapability;
+import java.util.EnumSet;
 
 import java.security.SecureRandom;
 
@@ -12,7 +14,10 @@ public class RandomDevice implements DeviceDriver {
     private final SecureRandom random;
 
     public RandomDevice() {
-        this.descriptor = new DeviceDescriptor("random", DeviceType.CHARACTER, "1.0");
+        this.descriptor = new DeviceDescriptor(
+            "random", DeviceType.CHARACTER, "1.0", "JavaVirtualOS", "Secure random byte generator",
+            EnumSet.of(DeviceCapability.READ)
+        );
         this.random = new SecureRandom();
     }
 
@@ -42,5 +47,10 @@ public class RandomDevice implements DeviceDriver {
     public int write(byte[] data) {
         // According to Linux, writing to /dev/random adds entropy, but we'll just discard it for now.
         return data.length; 
+    }
+
+    @Override
+    public boolean healthCheck() {
+        return true;
     }
 }
