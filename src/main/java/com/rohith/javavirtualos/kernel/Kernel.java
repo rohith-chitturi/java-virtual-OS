@@ -12,6 +12,10 @@ import com.rohith.javavirtualos.kernel.resource.ResourceManager;
 import com.rohith.javavirtualos.filesystem.FileSystemManager;
 import com.rohith.javavirtualos.services.FileSystemService;
 import com.rohith.javavirtualos.services.DefaultFileSystemService;
+import com.rohith.javavirtualos.kernel.device.DeviceManager;
+import com.rohith.javavirtualos.kernel.device.drivers.NullDevice;
+import com.rohith.javavirtualos.kernel.device.drivers.ZeroDevice;
+import com.rohith.javavirtualos.kernel.device.drivers.RandomDevice;
 
 /**
  * The central coordinator for the virtual operating system.
@@ -25,6 +29,7 @@ public class Kernel {
     private SecurityManager securityManager;
     private ProcessManager processManager;
     private com.rohith.javavirtualos.kernel.network.NetworkManager networkManager;
+    private DeviceManager deviceManager;
     private KernelConfig config;
     private KernelEventBus eventBus;
     private KernelMetrics metrics;
@@ -65,9 +70,15 @@ public class Kernel {
         
         this.networkManager = new com.rohith.javavirtualos.kernel.network.NetworkManager(eventBus);
         
+        System.out.println("[ OK ] Initializing Device Manager");
+        this.deviceManager = new DeviceManager(eventBus, fsManager);
+        this.deviceManager.registerDevice(new NullDevice());
+        this.deviceManager.registerDevice(new ZeroDevice());
+        this.deviceManager.registerDevice(new RandomDevice());
+        
         // 3. Initialize Shell
         System.out.println("[ OK ] Starting Virtual Shell");
-        this.shell = new Shell(systemContext, fsService, processService, userManager, networkManager);
+        this.shell = new Shell(systemContext, fsService, processService, userManager, networkManager, deviceManager);
     }
 
     public void startShell() {

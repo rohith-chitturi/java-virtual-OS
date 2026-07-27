@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.ArrayList;
 import com.rohith.javavirtualos.kernel.network.NetworkManager;
 import com.rohith.javavirtualos.command.network.*;
+import com.rohith.javavirtualos.kernel.device.DeviceManager;
+import com.rohith.javavirtualos.command.device.*;
 
 /**
  * The main CLI loop and input parser.
@@ -22,12 +24,14 @@ public class Shell {
     private final com.rohith.javavirtualos.services.ProcessService processService;
     private final UserManager userManager;
     private final NetworkManager networkManager;
+    private final DeviceManager deviceManager;
 
-    public Shell(SystemContext systemContext, com.rohith.javavirtualos.services.FileSystemService fsService, com.rohith.javavirtualos.services.ProcessService processService, UserManager userManager, NetworkManager networkManager) {
+    public Shell(SystemContext systemContext, com.rohith.javavirtualos.services.FileSystemService fsService, com.rohith.javavirtualos.services.ProcessService processService, UserManager userManager, NetworkManager networkManager, DeviceManager deviceManager) {
         this.fsService = fsService;
         this.processService = processService;
         this.userManager = userManager;
         this.networkManager = networkManager;
+        this.deviceManager = deviceManager;
         this.shellContext = new ShellContext(systemContext, userManager.getUser("root"), System.out, System.in);
         this.commandRegistry = new CommandRegistry();
         this.history = new ArrayList<>();
@@ -73,6 +77,12 @@ public class Shell {
         commandRegistry.register(new RouteCommand(networkManager));
         commandRegistry.register(new NetstatCommand(networkManager));
         commandRegistry.register(new PingCommand(networkManager));
+        
+        // Device Commands
+        commandRegistry.register(new LsDevCommand(deviceManager));
+        commandRegistry.register(new MountCommand(fsService));
+        commandRegistry.register(new DevicesCommand(deviceManager));
+        commandRegistry.register(new DevStatCommand(deviceManager));
     }
 
     @SuppressWarnings("resource")
