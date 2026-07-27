@@ -1,20 +1,17 @@
 # Contributing to Java Virtual OS
 
-First off, thank you for considering contributing to Java Virtual OS!
+Welcome! This project is structured as a production-grade kernel simulation.
 
-## Workflow
-1. Find an issue or create a new one.
-2. Create a feature branch (`git checkout -b feature/issue-id-name`).
-3. Make your changes and ensure they adhere to our coding standards.
-4. Run all tests (`mvn test`).
-5. Submit a Pull Request.
+## Core Philosophies
+1. **Clean Architecture**: Follow SOLID principles. Subsystems must be decoupled using Dependency Injection via the `Kernel` class.
+2. **Event-Driven**: Avoid tight coupling. Emit strongly-typed `KernelEvent` objects to the `KernelEventBus` for cross-module communication.
+3. **Architectural Purity**: Utilize the Process Control Block (PCB) for state. Do not put executable logic into data models.
 
-## Coding Standards
-- **Java Standard**: Java 21
-- **Code Style**: Google Java Style Guide
-- **Testing**: JUnit 5 is required for all new commands and logic.
-- **Commit Messages**: Write clear and descriptive commit messages.
+## Package Organization
+- All core operating system features must be nested under `com.rohith.javavirtualos.kernel`.
+- **Architecture Freeze**: Do not restructure or move existing legacy packages (e.g., `shell`, `filesystem`) unless explicitly requested as part of a dedicated refactoring milestone.
 
-## PR Process
-- One feature per pull request.
-- A project maintainer will review your PR. Addressing feedback promptly helps get it merged faster.
+## Branch Strategy
+- Create feature branches following the format: `feature/phase-X-feature-name`.
+- Commit atomically and push.
+- Open Pull Requests for all changes.

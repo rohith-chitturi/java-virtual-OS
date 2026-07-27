@@ -6,13 +6,16 @@ import com.rohith.javavirtualos.command.*;
 import java.util.Scanner;
 import java.util.List;
 import java.util.ArrayList;
+import com.rohith.javavirtualos.kernel.network.NetworkManager;
+import com.rohith.javavirtualos.command.network.*;
+import com.rohith.javavirtualos.kernel.device.DeviceManager;
+import com.rohith.javavirtualos.command.device.*;
 
 /**
  * The main CLI loop and input parser.
  */
 public class Shell {
 
-    private final SystemContext systemContext;
     private final ShellContext shellContext;
     private final CommandRegistry commandRegistry;
     private final List<String> history;
@@ -20,12 +23,15 @@ public class Shell {
     private final com.rohith.javavirtualos.services.FileSystemService fsService;
     private final com.rohith.javavirtualos.services.ProcessService processService;
     private final UserManager userManager;
+    private final NetworkManager networkManager;
+    private final DeviceManager deviceManager;
 
-    public Shell(SystemContext systemContext, com.rohith.javavirtualos.services.FileSystemService fsService, com.rohith.javavirtualos.services.ProcessService processService, UserManager userManager) {
-        this.systemContext = systemContext;
+    public Shell(SystemContext systemContext, com.rohith.javavirtualos.services.FileSystemService fsService, com.rohith.javavirtualos.services.ProcessService processService, UserManager userManager, NetworkManager networkManager, DeviceManager deviceManager) {
         this.fsService = fsService;
         this.processService = processService;
         this.userManager = userManager;
+        this.networkManager = networkManager;
+        this.deviceManager = deviceManager;
         this.shellContext = new ShellContext(systemContext, userManager.getUser("root"), System.out, System.in);
         this.commandRegistry = new CommandRegistry();
         this.history = new ArrayList<>();
@@ -50,6 +56,7 @@ public class Shell {
         
         // Process Commands
         commandRegistry.register(new PsCommand(processService));
+        commandRegistry.register(new PstreeCommand(processService));
         commandRegistry.register(new KillCommand(processService));
         commandRegistry.register(new SleepCommand());
         
@@ -64,8 +71,21 @@ public class Shell {
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.CatCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.WriteCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.AppendCommand(fsService));
+        
+        // Network Commands
+        commandRegistry.register(new IfConfigCommand(networkManager));
+        commandRegistry.register(new RouteCommand(networkManager));
+        commandRegistry.register(new NetstatCommand(networkManager));
+        commandRegistry.register(new PingCommand(networkManager));
+        
+        // Device Commands
+        commandRegistry.register(new LsDevCommand(deviceManager));
+        commandRegistry.register(new MountCommand(fsService));
+        commandRegistry.register(new DevicesCommand(deviceManager));
+        commandRegistry.register(new DevStatCommand(deviceManager));
     }
 
+    @SuppressWarnings("resource")
     public void start() {
         Scanner scanner = new Scanner(shellContext.getIn());
         boolean running = true;

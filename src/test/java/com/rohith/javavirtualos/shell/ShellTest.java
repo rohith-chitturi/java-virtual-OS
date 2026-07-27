@@ -2,11 +2,9 @@ package com.rohith.javavirtualos.shell;
 
 import com.rohith.javavirtualos.kernel.ConfigManager;
 import com.rohith.javavirtualos.kernel.SystemContext;
+import com.rohith.javavirtualos.kernel.UserManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,7 +20,8 @@ class ShellTest {
 
     @Test
     void testShellInitialization() {
-        Shell shell = new Shell(systemContext);
+        UserManager userManager = new UserManager();
+        Shell shell = new Shell(systemContext, null, null, userManager, null, null);
         assertNotNull(shell);
     }
 }

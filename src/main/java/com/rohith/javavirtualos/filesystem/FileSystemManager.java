@@ -1,12 +1,12 @@
 package com.rohith.javavirtualos.filesystem;
 
 import com.rohith.javavirtualos.events.EventBus;
-import com.rohith.javavirtualos.events.FileSystemEvent;
 import com.rohith.javavirtualos.exceptions.FileNotFoundException;
 import com.rohith.javavirtualos.exceptions.FileSystemException;
 import com.rohith.javavirtualos.filesystem.model.DirectoryNode;
 import com.rohith.javavirtualos.filesystem.model.FileNode;
 import com.rohith.javavirtualos.filesystem.model.Inode;
+import com.rohith.javavirtualos.filesystem.model.DeviceNode;
 import com.rohith.javavirtualos.kernel.SecurityManager;
 import com.rohith.javavirtualos.kernel.User;
 
@@ -18,7 +18,10 @@ public class FileSystemManager {
     private final DirectoryNode root;
     private final PathResolver pathResolver;
     private final FileSystemValidator validator;
-    private final EventBus eventBus; // We'll assume this is passed in later, or instantiated here for now.
+    @SuppressWarnings("unused")
+    private final EventBus eventBus;
+    
+    @SuppressWarnings("unused")
     private SecurityManager securityManager;
 
     public FileSystemManager() {
@@ -106,5 +109,25 @@ public class FileSystemManager {
     
     public void validateWriteAccess(Inode target, User currentUser) throws FileSystemException {
         validator.validateWrite(target, currentUser);
+    }
+    
+    public void mountDevice(String path, DeviceNode deviceNode) throws FileSystemException {
+        DirectoryNode parent = pathResolver.resolveParentDirectory(path, root);
+        if (parent == null) {
+            String parentStr = path.substring(0, path.lastIndexOf('/'));
+            if (parentStr.isEmpty()) parentStr = "/";
+            // For simplicity, create /dev if we're mounting there
+            if (parentStr.equals("/dev")) {
+                try {
+                    parent = resolveDirectory("/dev", root);
+                } catch (Exception e) {
+                    parent = new DirectoryNode("dev", "root", root);
+                    root.addChild(parent);
+                }
+            } else {
+                throw new FileNotFoundException("Parent directory does not exist for mount: " + path);
+            }
+        }
+        parent.addChild(deviceNode);
     }
 }

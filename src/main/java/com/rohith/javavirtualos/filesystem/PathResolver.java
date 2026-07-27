@@ -2,9 +2,6 @@ package com.rohith.javavirtualos.filesystem;
 
 import com.rohith.javavirtualos.filesystem.model.DirectoryNode;
 import com.rohith.javavirtualos.filesystem.model.Inode;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Helper to resolve string paths (absolute or relative) into Inodes.
@@ -32,9 +29,11 @@ public class PathResolver {
             startNode = root;
             path = path.substring(1); // strip leading slash
         } else if (path.startsWith("~")) {
-            startNode = resolvePath("/home/javavm", root); // Assuming default home
-            if (startNode == null || !(startNode instanceof DirectoryNode)) {
+            Inode resolvedHome = resolvePath("/home/javavm", root); // Assuming default home
+            if (resolvedHome == null || !(resolvedHome instanceof DirectoryNode)) {
                 startNode = root;
+            } else {
+                startNode = (DirectoryNode) resolvedHome;
             }
             path = path.length() > 1 ? path.substring(2) : "";
         }
