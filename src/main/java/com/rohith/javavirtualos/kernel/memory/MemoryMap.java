@@ -5,10 +5,8 @@ import java.util.List;
 
 public class MemoryMap {
     private final List<MemoryBlock> blocks;
-    private final MemorySize totalSize;
 
     public MemoryMap(MemorySize totalSize, MemorySize reservedKernelSize) {
-        this.totalSize = totalSize;
         this.blocks = new ArrayList<>();
         
         if (reservedKernelSize.toBytes() > 0) {

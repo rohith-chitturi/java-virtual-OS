@@ -7,6 +7,7 @@ import com.rohith.javavirtualos.kernel.events.KernelEventBus;
 import com.rohith.javavirtualos.kernel.metrics.ExecutionTimeline;
 import com.rohith.javavirtualos.kernel.process.manager.ProcessTask;
 import com.rohith.javavirtualos.kernel.process.pcb.ProcessControlBlock;
+import com.rohith.javavirtualos.kernel.process.pcb.SchedulingInfo;
 import com.rohith.javavirtualos.kernel.scheduler.roundrobin.RoundRobinScheduler;
 import org.junit.jupiter.api.Test;
 
@@ -26,13 +27,13 @@ class SchedulerSimulatorTest {
         
         User root = new User("root", "pwd");
         
-        ProcessControlBlock p1 = new ProcessControlBlock(1, "P1", root, new ProcessTask(() -> {}), 1, 0);
+        ProcessControlBlock p1 = new ProcessControlBlock(1, 0, "P1", root, new ProcessTask(() -> {}), new SchedulingInfo(1, 0), null);
         p1.getSchedulingInfo().setBurstTime(5);
         
-        ProcessControlBlock p2 = new ProcessControlBlock(2, "P2", root, new ProcessTask(() -> {}), 1, 2);
+        ProcessControlBlock p2 = new ProcessControlBlock(2, 0, "P2", root, new ProcessTask(() -> {}), new SchedulingInfo(1, 2), null);
         p2.getSchedulingInfo().setBurstTime(3);
         
-        ProcessControlBlock p3 = new ProcessControlBlock(3, "P3", root, new ProcessTask(() -> {}), 1, 4);
+        ProcessControlBlock p3 = new ProcessControlBlock(3, 0, "P3", root, new ProcessTask(() -> {}), new SchedulingInfo(1, 4), null);
         p3.getSchedulingInfo().setBurstTime(6);
         
         // Simulated execution loop

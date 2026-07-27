@@ -2,7 +2,7 @@ package com.rohith.javavirtualos.kernel.events;
 
 import com.rohith.javavirtualos.kernel.vfs.Path;
 
-public abstract class VfsEvent implements KernelEvent {
+public abstract class VfsEvent extends KernelEvent {
     public abstract String getMessage();
     
     public static class FileCreatedEvent extends VfsEvent {

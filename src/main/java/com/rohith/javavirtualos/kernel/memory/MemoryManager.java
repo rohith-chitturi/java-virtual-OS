@@ -3,9 +3,9 @@ package com.rohith.javavirtualos.kernel.memory;
 import com.rohith.javavirtualos.kernel.core.KernelTick;
 import com.rohith.javavirtualos.kernel.events.KernelEventBus;
 import com.rohith.javavirtualos.kernel.memory.strategy.AllocationStrategy;
-import com.rohith.javavirtualos.kernel.events.OutOfMemoryEvent;
-import com.rohith.javavirtualos.kernel.events.MemoryAllocatedEvent;
-import com.rohith.javavirtualos.kernel.events.MemoryReleasedEvent;
+import com.rohith.javavirtualos.kernel.events.MemoryEvent.OutOfMemoryEvent;
+import com.rohith.javavirtualos.kernel.events.MemoryEvent.MemoryAllocatedEvent;
+import com.rohith.javavirtualos.kernel.events.MemoryEvent.MemoryReleasedEvent;
 
 import java.util.ArrayList;
 import java.util.List;

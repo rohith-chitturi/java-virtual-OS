@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class KernelMetrics {
     private final AtomicInteger totalProcessesCreated = new AtomicInteger(0);
     private final AtomicInteger runningProcesses = new AtomicInteger(0);
-    private final AtomicLong totalTurnAroundTime = new AtomicLong(0);
     private final AtomicLong peakMemoryUsage = new AtomicLong(0);
 
     public void incrementProcessesCreated() {

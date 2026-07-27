@@ -9,6 +9,9 @@ import com.rohith.javavirtualos.kernel.core.PIDGenerator;
 import com.rohith.javavirtualos.kernel.events.KernelEventBus;
 import com.rohith.javavirtualos.kernel.metrics.KernelMetrics;
 import com.rohith.javavirtualos.kernel.resource.ResourceManager;
+import com.rohith.javavirtualos.filesystem.FileSystemManager;
+import com.rohith.javavirtualos.services.FileSystemService;
+import com.rohith.javavirtualos.services.DefaultFileSystemService;
 
 /**
  * The central coordinator for the virtual operating system.
@@ -21,6 +24,7 @@ public class Kernel {
     private UserManager userManager;
     private SecurityManager securityManager;
     private ProcessManager processManager;
+    private com.rohith.javavirtualos.kernel.network.NetworkManager networkManager;
     private KernelConfig config;
     private KernelEventBus eventBus;
     private KernelMetrics metrics;
@@ -59,9 +63,11 @@ public class Kernel {
         this.userManager = new UserManager();
         fsManager.setSecurityManager(securityManager); // We'll add this method
         
+        this.networkManager = new com.rohith.javavirtualos.kernel.network.NetworkManager(eventBus);
+        
         // 3. Initialize Shell
         System.out.println("[ OK ] Starting Virtual Shell");
-        this.shell = new Shell(systemContext, fsService, processService, userManager);
+        this.shell = new Shell(systemContext, fsService, processService, userManager, networkManager);
     }
 
     public void startShell() {

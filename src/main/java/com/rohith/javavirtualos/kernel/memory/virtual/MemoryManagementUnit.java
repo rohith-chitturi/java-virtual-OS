@@ -1,5 +1,8 @@
 package com.rohith.javavirtualos.kernel.memory.virtual;
 
+import com.rohith.javavirtualos.kernel.events.MemoryEvent.PageFaultEvent;
+import com.rohith.javavirtualos.kernel.events.MemoryEvent.TLBHitEvent;
+import com.rohith.javavirtualos.kernel.events.MemoryEvent.TLBMissEvent;
 import com.rohith.javavirtualos.kernel.events.*;
 import com.rohith.javavirtualos.kernel.memory.PhysicalAddress;
 import com.rohith.javavirtualos.kernel.memory.MemoryConstants;
@@ -30,7 +33,9 @@ public class MemoryManagementUnit {
         if (frameOpt.isPresent()) {
             stats.recordTlbHit();
             eventBus.publish(new TLBHitEvent(vAddr));
-            return frameOpt.get().getStartAddress().plus(com.rohith.javavirtualos.kernel.memory.MemorySize.ofBytes(offset));
+            Frame frame = frameOpt.get();
+            faultHandler.recordAccess(frame);
+            return frame.getStartAddress().plus(com.rohith.javavirtualos.kernel.memory.MemorySize.ofBytes(offset));
         }
 
         stats.recordTlbMiss();
@@ -52,6 +57,7 @@ public class MemoryManagementUnit {
         pte.setReferenced(true);
         Frame frame = pte.getFrame();
         tlb.update(page, frame);
+        faultHandler.recordAccess(frame);
         
         return frame.getStartAddress().plus(com.rohith.javavirtualos.kernel.memory.MemorySize.ofBytes(offset));
     }

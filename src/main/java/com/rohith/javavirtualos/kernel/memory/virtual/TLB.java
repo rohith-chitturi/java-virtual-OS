@@ -5,11 +5,9 @@ import java.util.Map;
 import java.util.Optional;
 
 public class TLB {
-    private final int capacity;
     private final Map<Page, Frame> cache;
 
     public TLB(int capacity) {
-        this.capacity = capacity;
         this.cache = new LinkedHashMap<Page, Frame>(capacity, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Page, Frame> eldest) {
