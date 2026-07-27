@@ -8,4 +8,5 @@ public interface DeviceDriver {
     void shutdown();
     byte[] read(int maxBytes) throws IOException;
     int write(byte[] data) throws IOException;
+    boolean healthCheck();
 }

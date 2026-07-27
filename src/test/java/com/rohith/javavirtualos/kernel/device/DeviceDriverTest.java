@@ -37,4 +37,28 @@ class DeviceDriverTest {
         assertEquals(10, data1.length);
         assertNotEquals(java.util.Arrays.toString(data1), java.util.Arrays.toString(data2));
     }
+
+    @Test
+    void testDescriptorLifecycle() throws Exception {
+        NullDevice dev = new NullDevice();
+        com.rohith.javavirtualos.filesystem.model.DirectoryNode root = new com.rohith.javavirtualos.filesystem.model.DirectoryNode("root", "root", null);
+        com.rohith.javavirtualos.filesystem.model.DeviceNode node = new com.rohith.javavirtualos.filesystem.model.DeviceNode(
+            dev, 
+            new DeviceManager(new com.rohith.javavirtualos.kernel.events.KernelEventBus(), new com.rohith.javavirtualos.filesystem.FileSystemManager()), 
+            root
+        );
+        
+        com.rohith.javavirtualos.kernel.process.descriptor.OpenDevice openDevice = new com.rohith.javavirtualos.kernel.process.descriptor.OpenDevice(node);
+        assertTrue(openDevice.isOpen());
+        
+        openDevice.close();
+        assertFalse(openDevice.isOpen());
+    }
+
+    @Test
+    void testHealthCheck() throws Exception {
+        NullDevice dev = new NullDevice();
+        dev.init();
+        assertTrue(dev.healthCheck());
+    }
 }

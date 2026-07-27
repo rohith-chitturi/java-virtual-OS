@@ -2,6 +2,7 @@ package com.rohith.javavirtualos.filesystem.model;
 
 import com.rohith.javavirtualos.kernel.device.DeviceDriver;
 import com.rohith.javavirtualos.kernel.device.DeviceManager;
+import com.rohith.javavirtualos.kernel.device.DeviceState;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -16,8 +17,22 @@ public class DeviceNode extends FileNode {
         this.deviceManager = deviceManager;
     }
 
+    private boolean checkHealth() {
+        if (driver.getDescriptor().getState() == DeviceState.FAILED) {
+            deviceManager.recordError(driver, "Device is in FAILED state");
+            return false;
+        }
+        if (!driver.healthCheck()) {
+            deviceManager.recordError(driver, "Health check failed");
+            driver.getDescriptor().setState(DeviceState.FAILED);
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public String getContent() {
+        if (!checkHealth()) return "";
         try {
             byte[] data = driver.read(4096);
             deviceManager.recordRead(driver, data.length);
@@ -30,6 +45,7 @@ public class DeviceNode extends FileNode {
 
     @Override
     public void setContent(String content) {
+        if (!checkHealth()) return;
         try {
             byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
             int written = driver.write(bytes);
