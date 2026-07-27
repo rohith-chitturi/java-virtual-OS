@@ -158,7 +158,7 @@ public class ProcessManager {
     private void changeState(ProcessControlBlock pcb, ProcessState newState) {
         ProcessState oldState = pcb.getState();
         pcb.setState(newState);
-        eventBus.publish(new ProcessStateChangedEvent(pcb.getPid(), pcb.getCommandName(), pcb.getOwner().getUsername(), oldState.name(), newState.name()));
+        eventBus.publish(new ProcessStateChangedEvent(pcb.getPid(), pcb.getOwner().getUsername(), oldState.name(), newState.name()));
     }
 
     private void checkPermission(ProcessControlBlock pcb, User requestor) {

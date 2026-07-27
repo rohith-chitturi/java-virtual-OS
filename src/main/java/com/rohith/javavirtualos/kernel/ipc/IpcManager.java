@@ -7,12 +7,10 @@ import java.util.Map;
 
 public class IpcManager {
     private final Map<Long, IPCObject> ipcObjects;
-    private final IPCStatistics stats;
     private long nextId = 1;
 
-    public IpcManager(IPCStatistics stats) {
+    public IpcManager() {
         this.ipcObjects = new HashMap<>();
-        this.stats = stats;
     }
 
     public long register(IPCObject obj) {

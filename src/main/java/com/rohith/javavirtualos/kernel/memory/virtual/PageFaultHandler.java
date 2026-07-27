@@ -1,8 +1,8 @@
 package com.rohith.javavirtualos.kernel.memory.virtual;
 
 import com.rohith.javavirtualos.kernel.events.KernelEventBus;
-import com.rohith.javavirtualos.kernel.events.PageLoadedEvent;
-import com.rohith.javavirtualos.kernel.events.PageEvictedEvent;
+import com.rohith.javavirtualos.kernel.events.MemoryEvent.PageEvictedEvent;
+import com.rohith.javavirtualos.kernel.events.MemoryEvent.PageLoadedEvent;
 import com.rohith.javavirtualos.kernel.memory.virtual.strategy.PageReplacementStrategy;
 
 import java.util.Optional;
@@ -43,6 +43,13 @@ public class PageFaultHandler {
             eventBus.publish(new PageEvictedEvent(victimPage, frame));
             tlb.invalidate(victimPage);
             
+            if (victimPage.getPid() == pageTable.getPid()) {
+                PageTableEntry victimPte = pageTable.getEntry(victimPage.getPageNumber());
+                victimPte.setValid(false);
+                victimPte.setState(PageState.SWAPPED_OUT);
+                victimPte.setFrame(null);
+            }
+            
             victimEntry.setOccupant(page);
             victimEntry.setReferenced(true);
         }
@@ -57,5 +64,9 @@ public class PageFaultHandler {
         
         replacementStrategy.recordAccess(frame);
         eventBus.publish(new PageLoadedEvent(page, frame));
+    }
+
+    public void recordAccess(Frame frame) {
+        replacementStrategy.recordAccess(frame);
     }
 }

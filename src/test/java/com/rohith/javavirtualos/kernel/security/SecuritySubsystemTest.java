@@ -1,7 +1,6 @@
 package com.rohith.javavirtualos.kernel.security;
 
 import com.rohith.javavirtualos.kernel.events.KernelEventBus;
-import com.rohith.javavirtualos.kernel.events.SecurityEvent;
 import com.rohith.javavirtualos.kernel.vfs.*;
 import org.junit.jupiter.api.Test;
 

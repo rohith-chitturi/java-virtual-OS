@@ -14,7 +14,7 @@ public class ProcessStateMachine {
                 if (newState == ProcessState.RUNNING || newState == ProcessState.SUSPENDED) valid = true;
                 break;
             case RUNNING:
-                if (newState == ProcessState.WAITING || newState == ProcessState.READY || newState == ProcessState.TERMINATED || newState == ProcessState.BLOCKED) valid = true;
+                if (newState == ProcessState.WAITING || newState == ProcessState.READY || newState == ProcessState.TERMINATED || newState == ProcessState.BLOCKED || newState == ProcessState.SUSPENDED) valid = true;
                 break;
             case WAITING:
             case BLOCKED:

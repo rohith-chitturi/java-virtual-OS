@@ -1,6 +1,10 @@
 package com.rohith.javavirtualos.kernel.vfs;
 
 import com.rohith.javavirtualos.kernel.events.KernelEventBus;
+import com.rohith.javavirtualos.kernel.events.VfsEvent.DirectoryCreatedEvent;
+import com.rohith.javavirtualos.kernel.events.VfsEvent.DirectoryDeletedEvent;
+import com.rohith.javavirtualos.kernel.events.VfsEvent.FileCreatedEvent;
+import com.rohith.javavirtualos.kernel.events.VfsEvent.FileDeletedEvent;
 import com.rohith.javavirtualos.kernel.security.PermissionBits;
 import java.util.Optional;
 

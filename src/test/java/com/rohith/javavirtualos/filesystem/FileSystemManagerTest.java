@@ -1,6 +1,5 @@
 package com.rohith.javavirtualos.filesystem;
 
-import com.rohith.javavirtualos.exceptions.FileNotFoundException;
 import com.rohith.javavirtualos.exceptions.FileSystemException;
 import com.rohith.javavirtualos.filesystem.model.DirectoryNode;
 import com.rohith.javavirtualos.filesystem.model.FileNode;

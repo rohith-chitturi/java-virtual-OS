@@ -1,6 +1,6 @@
 package com.rohith.javavirtualos.kernel.events;
 
-public abstract class IpcEvent implements KernelEvent {
+public abstract class IpcEvent extends KernelEvent {
     public abstract String getMessage();
 
     public static class SignalSentEvent extends IpcEvent {

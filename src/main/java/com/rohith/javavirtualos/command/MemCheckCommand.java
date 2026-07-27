@@ -26,7 +26,7 @@ public class MemCheckCommand implements Command {
             return CommandResult.success(sb.toString());
         } catch (Exception e) {
             sb.append("✗ Validation FAILED: ").append(e.getMessage());
-            return CommandResult.error(sb.toString());
+            return CommandResult.failure("Invalid memory size limit.");
         }
     }
 

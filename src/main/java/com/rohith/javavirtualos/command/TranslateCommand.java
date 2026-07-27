@@ -15,7 +15,7 @@ public class TranslateCommand implements Command {
 
     @Override
     public CommandResult execute(String[] args, ShellContext context) {
-        if (args.length < 3) return CommandResult.error("Usage: translate <PID> <VirtualAddress>");
+        if (args.length < 3) return CommandResult.failure("Usage: translate <PID> <VirtualAddress>");
         
         int pid = Integer.parseInt(args[1]);
         long vAddrValue = Long.decode(args[2]);

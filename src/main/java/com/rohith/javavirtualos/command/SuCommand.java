@@ -14,6 +14,7 @@ public class SuCommand implements Command {
     }
 
     @Override
+    @SuppressWarnings("resource")
     public CommandResult execute(String[] args, ShellContext context) {
         String targetUsername = args.length > 0 ? args[0] : "root";
         User targetUser = userManager.getUser(targetUsername);

@@ -23,8 +23,8 @@ public class MemoryCommand implements Command {
             char c;
             switch (block.getState()) {
                 case RESERVED: c = '#'; break;
-                case ALLOCATED: c = '█'; break;
-                case FREE: default: c = '░'; break;
+                case ALLOCATED: c = '='; break;
+                case FREE: default: c = '-'; break;
             }
             for (int i = 0; i < chars; i++) {
                 visual.append(c);

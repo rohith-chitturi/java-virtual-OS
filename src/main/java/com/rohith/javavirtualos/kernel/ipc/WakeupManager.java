@@ -1,7 +1,7 @@
 package com.rohith.javavirtualos.kernel.ipc;
 
 import com.rohith.javavirtualos.kernel.process.pcb.ProcessControlBlock;
-import com.rohith.javavirtualos.kernel.process.pcb.ProcessState;
+import com.rohith.javavirtualos.kernel.process.state.ProcessState;
 
 public class WakeupManager {
     

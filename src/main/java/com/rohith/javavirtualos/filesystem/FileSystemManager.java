@@ -1,7 +1,6 @@
 package com.rohith.javavirtualos.filesystem;
 
 import com.rohith.javavirtualos.events.EventBus;
-import com.rohith.javavirtualos.events.FileSystemEvent;
 import com.rohith.javavirtualos.exceptions.FileNotFoundException;
 import com.rohith.javavirtualos.exceptions.FileSystemException;
 import com.rohith.javavirtualos.filesystem.model.DirectoryNode;
@@ -18,7 +17,10 @@ public class FileSystemManager {
     private final DirectoryNode root;
     private final PathResolver pathResolver;
     private final FileSystemValidator validator;
-    private final EventBus eventBus; // We'll assume this is passed in later, or instantiated here for now.
+    @SuppressWarnings("unused")
+    private final EventBus eventBus;
+    
+    @SuppressWarnings("unused")
     private SecurityManager securityManager;
 
     public FileSystemManager() {

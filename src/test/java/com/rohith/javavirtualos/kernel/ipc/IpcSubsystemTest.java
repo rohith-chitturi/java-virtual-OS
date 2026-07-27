@@ -1,7 +1,7 @@
 package com.rohith.javavirtualos.kernel.ipc;
 
 import com.rohith.javavirtualos.kernel.process.pcb.ProcessControlBlock;
-import com.rohith.javavirtualos.kernel.process.pcb.ProcessState;
+import com.rohith.javavirtualos.kernel.process.state.ProcessState;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -10,12 +10,11 @@ class IpcSubsystemTest {
 
     @Test
     void testPipeBlockingBehavior() {
-        IPCStatistics stats = new IPCStatistics();
         WakeupManager wakeup = new WakeupManager();
         Pipe pipe = new Pipe(1, "test-pipe", 5, wakeup);
         
-        ProcessControlBlock reader = new ProcessControlBlock(100, 0, "reader", 1);
-        ProcessControlBlock writer = new ProcessControlBlock(101, 0, "writer", 1);
+        ProcessControlBlock reader = new ProcessControlBlock(100, 0, "reader", null, null, null, null);
+        ProcessControlBlock writer = new ProcessControlBlock(101, 0, "writer", null, null, null, null);
         reader.setState(ProcessState.READY);
         writer.setState(ProcessState.READY);
         
@@ -44,7 +43,7 @@ class IpcSubsystemTest {
     
     @Test
     void testSignalHandling() {
-        ProcessControlBlock pcb = new ProcessControlBlock(200, 0, "target", 1);
+        ProcessControlBlock pcb = new ProcessControlBlock(200, 0, "target", null, null, null, null);
         
         assertFalse(pcb.hasPendingSignals());
         pcb.enqueueSignal(Signal.SIGTERM);

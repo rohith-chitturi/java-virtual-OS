@@ -1,6 +1,6 @@
 package com.rohith.javavirtualos.kernel.events;
 
-public abstract class SecurityEvent implements KernelEvent {
+public abstract class SecurityEvent extends KernelEvent {
     public abstract String getMessage();
     
     public static class LoginSuccessEvent extends SecurityEvent {
