@@ -57,8 +57,14 @@ public class Shell {
         // Process Commands
         commandRegistry.register(new PsCommand(processService));
         commandRegistry.register(new PstreeCommand(processService));
+        commandRegistry.register(new ThreadsCommand(processService));
         commandRegistry.register(new KillCommand(processService));
         commandRegistry.register(new SleepCommand());
+        commandRegistry.register(new CpuInfoCommand(processService));
+        commandRegistry.register(new SchedCommand(processService));
+        commandRegistry.register(new SetSchedulerCommand(processService));
+        commandRegistry.register(new AffinityCommand(processService));
+        commandRegistry.register(new RunQueueCommand(processService));
         
         // FS Commands
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.MkdirCommand(fsService));

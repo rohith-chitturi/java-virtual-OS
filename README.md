@@ -1,5 +1,11 @@
 # Java Virtual OS
 
+![Java 17+](https://img.shields.io/badge/Java-17+-blue.svg)
+![Maven](https://img.shields.io/badge/Build-Maven-orange.svg)
+![JUnit 5](https://img.shields.io/badge/Testing-JUnit%205-brightgreen.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+![Build Status](https://github.com/rohith-chitturi/java-virtual-OS/actions/workflows/ci.yml/badge.svg)
+
 A comprehensive, modular, event-driven operating system simulator written entirely in Java. This project models the core subsystems of a modern OS—process scheduling, memory management, virtual file systems, inter-process communication, networking, and device management—providing an interactive shell to explore and visualize these concepts.
 
 ## Features
@@ -14,6 +20,27 @@ A comprehensive, modular, event-driven operating system simulator written entire
 ## Architecture
 
 The project is structured into fully decoupled subsystems communicating via a central `KernelEventBus`. See [docs/architecture.md](docs/architecture.md) for detailed Mermaid diagrams and subsystem interactions.
+
+### Architecture Principles
+
+- Clean Architecture
+- SOLID Design
+- Event-Driven Kernel
+- Strategy Pattern
+- Registry Pattern
+- Descriptor-based Resource Management
+- Thread-safe subsystem managers
+- Comprehensive JUnit 5 testing
+
+### Project Metrics
+
+- **Subsystems:** 10+
+- **Shell Commands:** 30+
+- **Unit Tests:** 61
+- **Architecture Documents:** 1
+- **Mermaid Diagrams:** 4
+- **Java Version:** 17+
+- **Build Tool:** Maven
 
 Key subsystems include:
 - `com.rohith.javavirtualos.kernel.process`

@@ -11,22 +11,36 @@ import java.util.List;
 public class DefaultProcessService implements ProcessService {
 
     private final ProcessManager manager;
+    private com.rohith.javavirtualos.kernel.process.scheduler.KernelDispatcher dispatcher;
 
     public DefaultProcessService(ProcessManager manager) {
         this.manager = manager;
+    }
+    
+    public void setDispatcher(com.rohith.javavirtualos.kernel.process.scheduler.KernelDispatcher dispatcher) {
+        this.dispatcher = dispatcher;
+    }
+
+    @Override
+    public com.rohith.javavirtualos.kernel.process.scheduler.KernelDispatcher getDispatcher() {
+        return dispatcher;
     }
 
     @Override
     public CommandResult listProcesses(ShellContext context) {
         List<ProcessControlBlock> processes = manager.listProcesses();
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%-6s %-12s %-12s %-5s %s\n", "PID", "NAME", "STATE", "PRI", "MEM(KB)"));
+        sb.append(String.format("%-6s %-6s %-6s %-12s %-12s %-5s %-6s %s\n", "PID", "TGID", "PGID", "NAME", "STATE", "PRI", "CORE", "MEM(KB)"));
         for (ProcessControlBlock p : processes) {
-            sb.append(String.format("%-6d %-12s %-12s %-5d %d\n", 
+            String core = p.getActiveCore() >= 0 ? String.valueOf(p.getActiveCore()) : "-";
+            sb.append(String.format("%-6d %-6d %-6d %-12s %-12s %-5d %-6s %d\n", 
                 p.getPid(), 
+                p.getTgid(),
+                p.getPgid(),
                 p.getCommandName(), 
                 p.getState(), 
                 p.getSchedulingInfo().getPriority(),
+                core,
                 p.getResourceInfo().getMemoryUsage() / 1024));
         }
         return CommandResult.success(sb.toString().trim());
@@ -35,8 +49,20 @@ public class DefaultProcessService implements ProcessService {
     @Override
     public CommandResult killProcess(int pid, ShellContext context) {
         try {
-            manager.terminateProcess(pid, context.getCurrentUser());
-            return CommandResult.success("Process " + pid + " terminated.");
+            if (pid < 0) {
+                int pgid = -pid;
+                List<ProcessControlBlock> group = manager.findByPgid(pgid);
+                if (group.isEmpty()) {
+                    return CommandResult.failure("kill: no process found in group " + pgid);
+                }
+                for (ProcessControlBlock p : group) {
+                    manager.terminateProcess(p.getPid(), context.getCurrentUser());
+                }
+                return CommandResult.success("Process group " + pgid + " terminated.");
+            } else {
+                manager.terminateProcess(pid, context.getCurrentUser());
+                return CommandResult.success("Process " + pid + " terminated.");
+            }
         } catch (Exception e) {
             return CommandResult.failure(e.getMessage());
         }

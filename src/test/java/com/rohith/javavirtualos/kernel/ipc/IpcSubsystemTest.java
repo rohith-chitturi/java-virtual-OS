@@ -13,8 +13,8 @@ class IpcSubsystemTest {
         WakeupManager wakeup = new WakeupManager();
         Pipe pipe = new Pipe(1, "test-pipe", 5, wakeup);
         
-        ProcessControlBlock reader = new ProcessControlBlock(100, 0, "reader", null, null, null, null);
-        ProcessControlBlock writer = new ProcessControlBlock(101, 0, "writer", null, null, null, null);
+        ProcessControlBlock reader = new ProcessControlBlock(100, 100, 100, 0, "reader", null, null, null, null);
+        ProcessControlBlock writer = new ProcessControlBlock(101, 101, 101, 0, "writer", null, null, null, null);
         reader.setState(ProcessState.READY);
         writer.setState(ProcessState.READY);
         
@@ -43,7 +43,7 @@ class IpcSubsystemTest {
     
     @Test
     void testSignalHandling() {
-        ProcessControlBlock pcb = new ProcessControlBlock(200, 0, "target", null, null, null, null);
+        ProcessControlBlock pcb = new ProcessControlBlock(200, 200, 200, 0, "target", null, null, null, null);
         
         assertFalse(pcb.hasPendingSignals());
         pcb.enqueueSignal(Signal.SIGTERM);
