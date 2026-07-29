@@ -12,7 +12,9 @@ import com.rohith.javavirtualos.kernel.ipc.Signal;
 
 public class ProcessControlBlock {
     private final int pid;
-    private final int parentPid;
+    private final int tgid;
+    private int pgid;
+    private int parentPid;
     private final List<Integer> childrenPids;
     private ProcessState state;
     private int ownerUid;
@@ -25,9 +27,13 @@ public class ProcessControlBlock {
     private final String commandName;
     private long startTime;
     private long endTime;
+    private ExitStatus exitStatus;
+    private int activeCore = -1;
 
-    public ProcessControlBlock(int pid, int parentPid, String commandName, User owner, ProcessTask task, SchedulingInfo scheduling, ResourceInfo resource) {
+    public ProcessControlBlock(int pid, int tgid, int pgid, int parentPid, String commandName, User owner, ProcessTask task, SchedulingInfo scheduling, ResourceInfo resource) {
         this.pid = pid;
+        this.tgid = tgid;
+        this.pgid = pgid;
         this.parentPid = parentPid;
         this.childrenPids = new ArrayList<>();
         this.commandName = commandName;
@@ -43,8 +49,16 @@ public class ProcessControlBlock {
         childrenPids.add(childPid);
     }
     
+    public void removeChild(int childPid) {
+        childrenPids.remove(Integer.valueOf(childPid));
+    }
+    
     public int getPid() { return pid; }
+    public int getTgid() { return tgid; }
+    public int getPgid() { return pgid; }
+    public void setPgid(int pgid) { this.pgid = pgid; }
     public int getParentPid() { return parentPid; }
+    public void setParentPid(int parentPid) { this.parentPid = parentPid; }
     public List<Integer> getChildrenPids() { return childrenPids; }
     public ProcessState getState() { return state; }
     public void setState(ProcessState state) { this.state = state; }
@@ -74,4 +88,8 @@ public class ProcessControlBlock {
     public void setStartTime(long startTime) { this.startTime = startTime; }
     public long getEndTime() { return endTime; }
     public void setEndTime(long endTime) { this.endTime = endTime; }
+    public ExitStatus getExitStatus() { return exitStatus; }
+    public void setExitStatus(ExitStatus exitStatus) { this.exitStatus = exitStatus; }
+    public int getActiveCore() { return activeCore; }
+    public void setActiveCore(int activeCore) { this.activeCore = activeCore; }
 }

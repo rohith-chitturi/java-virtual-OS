@@ -13,6 +13,7 @@ import com.rohith.javavirtualos.kernel.metrics.KernelMetrics;
 import com.rohith.javavirtualos.kernel.process.pcb.ProcessControlBlock;
 import com.rohith.javavirtualos.kernel.process.pcb.ResourceInfo;
 import com.rohith.javavirtualos.kernel.process.pcb.SchedulingInfo;
+import com.rohith.javavirtualos.kernel.process.pcb.ExitStatus;
 import com.rohith.javavirtualos.kernel.process.state.ProcessState;
 import com.rohith.javavirtualos.kernel.process.state.ProcessStateMachine;
 import com.rohith.javavirtualos.kernel.resource.ResourceManager;
@@ -44,10 +45,15 @@ public class ProcessManager {
         }
         
         int pid = pidGenerator.generateId();
+        int pgid = pid;
+        if (parentPid > 0 && processTable.containsKey(parentPid)) {
+            pgid = processTable.get(parentPid).getPgid();
+        }
+
         SchedulingInfo sched = new SchedulingInfo(config.getDefaultPriority(), System.currentTimeMillis());
         ResourceInfo res = new ResourceInfo(0);
         
-        ProcessControlBlock pcb = new ProcessControlBlock(pid, parentPid, commandName, owner, task, sched, res);
+        ProcessControlBlock pcb = new ProcessControlBlock(pid, pid, pgid, parentPid, commandName, owner, task, sched, res);
         
         if (parentPid > 0 && processTable.containsKey(parentPid)) {
             processTable.get(parentPid).addChild(pid);
@@ -56,6 +62,28 @@ public class ProcessManager {
         processTable.put(pid, pcb);
         metrics.incrementProcessesCreated();
         eventBus.publish(new ProcessCreatedEvent(pid, commandName));
+        
+        return pcb;
+    }
+
+    public ProcessControlBlock createThread(int parentPid, ProcessTask task, ThreadAttributes attrs) {
+        ProcessControlBlock parent = findByPID(parentPid);
+        
+        if (processTable.size() >= config.getMaxProcesses()) {
+            throw new ResourceAllocationException("Max processes limit reached.");
+        }
+        
+        int pid = pidGenerator.generateId();
+        SchedulingInfo sched = new SchedulingInfo(attrs.getPriority(), System.currentTimeMillis());
+        
+        // Share ResourceInfo with parent
+        ProcessControlBlock pcb = new ProcessControlBlock(pid, parent.getTgid(), parent.getPgid(), parentPid, 
+                parent.getCommandName() + "-thread", parent.getOwner(), task, sched, parent.getResourceInfo());
+        
+        parent.addChild(pid);
+        processTable.put(pid, pcb);
+        metrics.incrementProcessesCreated();
+        eventBus.publish(new ProcessCreatedEvent(pid, pcb.getCommandName()));
         
         return pcb;
     }
@@ -79,9 +107,11 @@ public class ProcessManager {
         new Thread(() -> {
             try {
                 t.join();
-                if (pcb.getState() != ProcessState.TERMINATED) {
-                    changeState(pcb, ProcessState.TERMINATED);
+                if (pcb.getState() != ProcessState.TERMINATED && pcb.getState() != ProcessState.ZOMBIE) {
+                    pcb.setExitStatus(ExitStatus.normal(0));
+                    changeState(pcb, ProcessState.ZOMBIE);
                     cleanupResources(pcb);
+                    reparentOrphans(pcb);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -113,8 +143,66 @@ public class ProcessManager {
         checkPermission(pcb, requestor);
         
         pcb.getTask().stop();
-        changeState(pcb, ProcessState.TERMINATED);
+        pcb.setExitStatus(ExitStatus.signaled(9)); // Default to SIGKILL for terminate
+        changeState(pcb, ProcessState.ZOMBIE);
         cleanupResources(pcb);
+        reparentOrphans(pcb);
+    }
+    
+    private void reparentOrphans(ProcessControlBlock parent) {
+        if (parent.getPid() == 1) {
+            // If init dies, terminate all its children
+            for (int childPid : new ArrayList<>(parent.getChildrenPids())) {
+                ProcessControlBlock child = processTable.get(childPid);
+                if (child != null) {
+                    changeState(child, ProcessState.TERMINATED);
+                    processTable.remove(childPid);
+                }
+            }
+            parent.getChildrenPids().clear();
+            return;
+        }
+        
+        for (int childPid : new ArrayList<>(parent.getChildrenPids())) {
+            ProcessControlBlock child = processTable.get(childPid);
+            if (child != null) {
+                child.setParentPid(1); // Reparent to init (PID 1)
+                
+                // If init (1) gets a zombie, reap it immediately
+                if (child.getState() == ProcessState.ZOMBIE) {
+                    changeState(child, ProcessState.TERMINATED);
+                    processTable.remove(childPid);
+                } else {
+                    ProcessControlBlock init = processTable.get(1);
+                    if (init != null) {
+                        init.addChild(childPid);
+                    }
+                }
+            }
+        }
+        parent.getChildrenPids().clear();
+    }
+    
+    public ExitStatus waitProcess(int parentPid) {
+        return waitProcess(parentPid, -1);
+    }
+    
+    public ExitStatus waitProcess(int parentPid, int childPid) {
+        ProcessControlBlock parent = findByPID(parentPid);
+        
+        for (int cPid : parent.getChildrenPids()) {
+            if (childPid == -1 || cPid == childPid) {
+                ProcessControlBlock child = processTable.get(cPid);
+                if (child != null && child.getState() == ProcessState.ZOMBIE) {
+                    ExitStatus status = child.getExitStatus();
+                    changeState(child, ProcessState.TERMINATED);
+                    processTable.remove(cPid);
+                    parent.removeChild(cPid);
+                    return status;
+                }
+            }
+        }
+        throw new IllegalStateException("No zombie child process found to wait on.");
     }
     
     private void cleanupResources(ProcessControlBlock pcb) {
@@ -146,7 +234,23 @@ public class ProcessManager {
     }
 
     public void cleanupZombieProcesses() {
-        processTable.entrySet().removeIf(entry -> entry.getValue().getState() == ProcessState.TERMINATED);
+        // ZOMBIEs should only be cleaned by waitProcess(), but this handles force cleanup
+        processTable.entrySet().removeIf(entry -> entry.getValue().getState() == ProcessState.TERMINATED || entry.getValue().getState() == ProcessState.ZOMBIE);
+    }
+
+    public void setpgid(int pid, int pgid) {
+        ProcessControlBlock pcb = findByPID(pid);
+        pcb.setPgid(pgid);
+    }
+
+    public List<ProcessControlBlock> findByPgid(int pgid) {
+        List<ProcessControlBlock> result = new ArrayList<>();
+        for (ProcessControlBlock pcb : processTable.values()) {
+            if (pcb.getPgid() == pgid) {
+                result.add(pcb);
+            }
+        }
+        return result;
     }
 
     public void changePriority(int pid, int priority, User requestor) {

@@ -7,5 +7,6 @@ public enum ProcessState {
     WAITING,
     SUSPENDED,
     BLOCKED,
+    ZOMBIE,
     TERMINATED
 }
