@@ -6,6 +6,8 @@ public class PageTableEntry {
     private boolean valid;
     private boolean dirty;
     private boolean referenced;
+    private boolean shared;
+    private boolean writeProtected;
     private PageState state;
 
     public PageTableEntry(Page page) {
@@ -14,6 +16,8 @@ public class PageTableEntry {
         this.valid = false;
         this.dirty = false;
         this.referenced = false;
+        this.shared = false;
+        this.writeProtected = false;
         this.state = PageState.NEVER_ALLOCATED;
     }
 
@@ -29,6 +33,12 @@ public class PageTableEntry {
     
     public boolean isReferenced() { return referenced; }
     public void setReferenced(boolean referenced) { this.referenced = referenced; }
+    
+    public boolean isShared() { return shared; }
+    public void setShared(boolean shared) { this.shared = shared; }
+    
+    public boolean isWriteProtected() { return writeProtected; }
+    public void setWriteProtected(boolean writeProtected) { this.writeProtected = writeProtected; }
     
     public PageState getState() { return state; }
     public void setState(PageState state) { this.state = state; }

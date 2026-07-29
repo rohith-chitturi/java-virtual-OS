@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import com.rohith.javavirtualos.kernel.ipc.Signal;
+import com.rohith.javavirtualos.kernel.memory.virtual.VirtualMemoryArea;
 
 public class ProcessControlBlock {
     private final int pid;
@@ -29,6 +30,7 @@ public class ProcessControlBlock {
     private long endTime;
     private ExitStatus exitStatus;
     private int activeCore = -1;
+    private final List<VirtualMemoryArea> vmas;
 
     public ProcessControlBlock(int pid, int tgid, int pgid, int parentPid, String commandName, User owner, ProcessTask task, SchedulingInfo scheduling, ResourceInfo resource) {
         this.pid = pid;
@@ -43,6 +45,7 @@ public class ProcessControlBlock {
         this.resourceInfo = resource;
         this.state = ProcessState.NEW;
         this.pendingSignals = new ConcurrentLinkedQueue<>();
+        this.vmas = new ArrayList<>();
     }
 
     public void addChild(int childPid) {
@@ -92,4 +95,5 @@ public class ProcessControlBlock {
     public void setExitStatus(ExitStatus exitStatus) { this.exitStatus = exitStatus; }
     public int getActiveCore() { return activeCore; }
     public void setActiveCore(int activeCore) { this.activeCore = activeCore; }
+    public List<VirtualMemoryArea> getVmas() { return vmas; }
 }
