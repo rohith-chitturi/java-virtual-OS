@@ -110,14 +110,33 @@ flowchart LR
 flowchart TD
     PM[ProcessManager]
     PCB[ProcessControlBlock]
-    Sched[SchedulerSimulator]
     FDT[FileDescriptorTable]
     MemSpace[VirtualMemorySpace]
     
+    KD[KernelDispatcher]
+    Proc[Processor]
+    CPU0[CPU 0]
+    CPU1[CPU 1]
+    Sched0[Scheduler]
+    Sched1[Scheduler]
+    RQ0[Run Queue]
+    RQ1[Run Queue]
+    LB[LoadBalancer]
+    
     PM --> PCB
-    PCB --> Sched
+    PCB --> KD
     PCB --> FDT
     PCB --> MemSpace
+    
+    KD --> Proc
+    Proc --> CPU0
+    Proc --> CPU1
+    CPU0 --> Sched0
+    CPU1 --> Sched1
+    Sched0 --> RQ0
+    Sched1 --> RQ1
+    RQ0 --> LB
+    RQ1 --> LB
 ```
 
 **Process Lifecycle Diagram:**
@@ -143,8 +162,31 @@ flowchart TD
 **Purpose:** Simulates both physical memory (allocation, metrics) and virtual memory (MMU, paging, page faults).
 
 **Key Components:**
-- `ResourceManager`: Tracks physical memory allocation and enforces global system limits.
-- `MMUSimulator`: Maps virtual addresses to physical addresses, triggering Page Faults on cache misses.
+**Key Components:**
+- `MemoryManagementUnit`: Translates virtual to physical addresses, generates page faults.
+- `FrameTable`: Tracks physical memory allocation.
+- `SwapManager`: Evicts and loads pages to/from the VirtualFileSystem.
+- `VirtualMemoryArea`: Logical memory regions mapped to processes.
+
+**Architecture Diagram:**
+
+```mermaid
+flowchart TD
+    Proc[Process]
+    VMA[Virtual Memory Areas]
+    PT[Page Table]
+    MMU[Memory Management Unit]
+    FT[Frame Table]
+    SM[Swap Manager]
+    VFS[Virtual File System]
+    
+    Proc --> VMA
+    VMA --> PT
+    PT --> MMU
+    MMU --> FT
+    FT --> SM
+    SM --> VFS
+```
 
 ---
 
