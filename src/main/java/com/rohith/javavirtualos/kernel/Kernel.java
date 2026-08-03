@@ -61,7 +61,20 @@ public class Kernel {
         this.resourceManager = new ResourceManager(config.getMaxMemory());
         
         this.processManager = new ProcessManager(pidGenerator, eventBus, metrics, config, resourceManager);
-        ProcessService processService = new DefaultProcessService(processManager);
+        DefaultProcessService processService = new DefaultProcessService(processManager);
+        
+        // Initialize Simulator Dispatcher (Multi-core, CFS by default)
+        com.rohith.javavirtualos.kernel.core.Processor processor = new com.rohith.javavirtualos.kernel.core.MultiCoreProcessor(4);
+        java.util.List<com.rohith.javavirtualos.kernel.scheduler.Scheduler> schedulers = new java.util.ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            schedulers.add(new com.rohith.javavirtualos.kernel.scheduler.cfs.CompletelyFairScheduler());
+        }
+        com.rohith.javavirtualos.kernel.process.scheduler.KernelDispatcher dispatcher = 
+            new com.rohith.javavirtualos.kernel.process.scheduler.KernelDispatcher(
+                processor, schedulers, new com.rohith.javavirtualos.kernel.core.KernelTick(), 
+                eventBus, new com.rohith.javavirtualos.kernel.metrics.ExecutionTimeline(), 
+                2, new com.rohith.javavirtualos.kernel.scheduler.SchedulerStatistics());
+        processService.setDispatcher(dispatcher);
 
         System.out.println("[ OK ] Initializing Security Manager");
         this.securityManager = new SecurityManager();

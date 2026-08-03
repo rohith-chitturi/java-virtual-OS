@@ -14,14 +14,17 @@ public class ProcessStateMachine {
                 if (newState == ProcessState.RUNNING || newState == ProcessState.SUSPENDED) valid = true;
                 break;
             case RUNNING:
-                if (newState == ProcessState.WAITING || newState == ProcessState.READY || newState == ProcessState.TERMINATED || newState == ProcessState.BLOCKED || newState == ProcessState.SUSPENDED) valid = true;
+                if (newState == ProcessState.WAITING || newState == ProcessState.READY || newState == ProcessState.TERMINATED || newState == ProcessState.BLOCKED || newState == ProcessState.SUSPENDED || newState == ProcessState.ZOMBIE) valid = true;
                 break;
             case WAITING:
             case BLOCKED:
-                if (newState == ProcessState.READY || newState == ProcessState.SUSPENDED) valid = true;
+                if (newState == ProcessState.READY || newState == ProcessState.SUSPENDED || newState == ProcessState.ZOMBIE) valid = true;
                 break;
             case SUSPENDED:
-                if (newState == ProcessState.READY || newState == ProcessState.WAITING || newState == ProcessState.TERMINATED) valid = true;
+                if (newState == ProcessState.READY || newState == ProcessState.WAITING || newState == ProcessState.TERMINATED || newState == ProcessState.ZOMBIE) valid = true;
+                break;
+            case ZOMBIE:
+                if (newState == ProcessState.TERMINATED) valid = true;
                 break;
             case TERMINATED:
                 // No transitions allowed out of terminated

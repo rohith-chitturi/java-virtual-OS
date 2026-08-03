@@ -120,6 +120,24 @@ flowchart TD
     PCB --> MemSpace
 ```
 
+**Process Lifecycle Diagram:**
+
+```mermaid
+flowchart TD
+    NEW --> READY
+    READY --> RUNNING
+    RUNNING --> WAITING
+    WAITING --> READY
+    RUNNING --> READY
+    RUNNING --> BLOCKED
+    BLOCKED --> READY
+    RUNNING --> SUSPENDED
+    SUSPENDED --> READY
+    RUNNING --> ZOMBIE
+    ZOMBIE --> TERMINATED
+    RUNNING --> TERMINATED
+```
+
 ## Memory Management
 
 **Purpose:** Simulates both physical memory (allocation, metrics) and virtual memory (MMU, paging, page faults).
