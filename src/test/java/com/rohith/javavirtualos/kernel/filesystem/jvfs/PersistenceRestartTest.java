@@ -49,6 +49,11 @@ class PersistenceRestartTest {
         assertEquals(0, b1);
         assertEquals(1, b2);
         
+        byte[] sbDataUpdated = sb1.serialize();
+        byte[] block0Updated = new byte[BLOCK_SIZE];
+        System.arraycopy(sbDataUpdated, 0, block0Updated, 0, sbDataUpdated.length);
+        device1.writeBlock(0, block0Updated);
+        
         device1.close();
         
         // --- System Shutdown ---
