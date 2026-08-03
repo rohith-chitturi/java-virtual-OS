@@ -169,4 +169,27 @@ public class DefaultFileSystemService implements FileSystemService {
             return CommandResult.failure(e.getMessage());
         }
     }
+    @Override
+    public CommandResult findFile(String path, String pattern, ShellContext context) {
+        try {
+            DirectoryNode currentDir = getCurrentDir(context);
+            DirectoryNode targetDir = path == null ? currentDir : manager.resolveDirectory(path, currentDir);
+            StringBuilder sb = new StringBuilder();
+            findRecursive(targetDir, pattern, sb);
+            return CommandResult.success(sb.toString().trim());
+        } catch (FileSystemException e) {
+            return CommandResult.failure(e.getMessage());
+        }
+    }
+
+    private void findRecursive(DirectoryNode dir, String pattern, StringBuilder sb) {
+        for (Inode child : dir.getChildren()) {
+            if (child.getName().contains(pattern)) {
+                sb.append(child.getAbsolutePath()).append("\n");
+            }
+            if (child instanceof DirectoryNode) {
+                findRecursive((DirectoryNode) child, pattern, sb);
+            }
+        }
+    }
 }
