@@ -41,7 +41,7 @@ public class Shell {
     private void registerBuiltInCommands() {
         commandRegistry.register(new ExitCommand());
         commandRegistry.register(new EchoCommand());
-        commandRegistry.register(new ExecCommand(processService, fsService.getManager()));
+        commandRegistry.register(new ExecCommand(processService, fsService));
         commandRegistry.register(new PwdCommand());
         commandRegistry.register(new ClearCommand());
         commandRegistry.register(new DateCommand());
