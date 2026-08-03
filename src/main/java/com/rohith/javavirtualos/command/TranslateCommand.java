@@ -37,7 +37,7 @@ public class TranslateCommand implements Command {
         boolean tlbHit = tlb.lookup(page).isPresent();
         sb.append("TLB            : ").append(tlbHit ? "HIT" : "MISS").append("\n\n");
         
-        com.rohith.javavirtualos.kernel.process.pcb.ProcessControlBlock pcb = processService.getManager().getProcess(pid);
+        com.rohith.javavirtualos.kernel.process.pcb.ProcessControlBlock pcb = processService.getManager().findByPID(pid);
         if (pcb == null) {
             return CommandResult.failure("Process " + pid + " not found.");
         }
