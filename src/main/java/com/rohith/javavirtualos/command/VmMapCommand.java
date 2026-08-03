@@ -26,7 +26,7 @@ public class VmMapCommand implements Command {
         
         try {
             int pid = Integer.parseInt(args[1]);
-            ProcessControlBlock pcb = processService.getProcessManager().getProcess(pid);
+            ProcessControlBlock pcb = processService.getManager().findByPID(pid);
             
             if (pcb == null) {
                 return CommandResult.failure("Process " + pid + " not found.");
