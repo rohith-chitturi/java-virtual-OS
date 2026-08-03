@@ -41,6 +41,7 @@ public class Shell {
     private void registerBuiltInCommands() {
         commandRegistry.register(new ExitCommand());
         commandRegistry.register(new EchoCommand());
+        commandRegistry.register(new ExecCommand(processService, fsService.getManager()));
         commandRegistry.register(new PwdCommand());
         commandRegistry.register(new ClearCommand());
         commandRegistry.register(new DateCommand());
@@ -111,6 +112,14 @@ public class Shell {
             String commandName = tokens[0];
             String[] args = new String[tokens.length - 1];
             System.arraycopy(tokens, 1, args, 0, tokens.length - 1);
+            
+            if (commandName.startsWith("./") || commandName.endsWith(".vexe")) {
+                String[] newArgs = new String[args.length + 1];
+                newArgs[0] = commandName;
+                System.arraycopy(args, 0, newArgs, 1, args.length);
+                args = newArgs;
+                commandName = "exec";
+            }
 
             Command command = commandRegistry.getCommand(commandName);
             if (command != null) {

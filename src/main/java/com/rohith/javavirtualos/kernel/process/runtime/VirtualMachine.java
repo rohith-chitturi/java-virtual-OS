@@ -6,13 +6,14 @@ import java.util.List;
  * The core CPU emulator for the custom instruction set.
  * Executes instructions sequentially and interacts with the SystemCallInterface.
  */
-public class VirtualMachine {
+public class VirtualMachine implements Runnable {
     
     private final ExecutionContext context;
     private final List<Instruction> programMemory;
     private final SystemCallInterface syscallInterface;
     
     private boolean isRunning;
+    private int exitCode = 0;
 
     public VirtualMachine(ExecutionContext context, List<Instruction> programMemory, SystemCallInterface syscallInterface) {
         this.context = context;
@@ -113,10 +114,12 @@ public class VirtualMachine {
                 context.setRegister(0, result); // Typically store syscall result in R0
                 
                 if (syscallId == 1) { // 1 = EXIT
+                    this.exitCode = result;
                     isRunning = false;
                 }
                 break;
             case EXIT:
+                this.exitCode = context.getRegister(0);
                 isRunning = false;
                 break;
             default:
@@ -133,5 +136,9 @@ public class VirtualMachine {
             return Integer.parseInt(regStr.substring(1));
         }
         throw new IllegalArgumentException("Invalid register format: " + regStr);
+    }
+    
+    public int getExitCode() {
+        return exitCode;
     }
 }
