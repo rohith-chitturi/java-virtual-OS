@@ -29,7 +29,7 @@ class MMUSimulatorTest {
         MemoryManagementUnit mmu = new MemoryManagementUnit(tlb, handler, stats, bus);
         
         PageTable pt = new PageTable(1);
-        ProcessControlBlock dummyProcess = new ProcessControlBlock(1, 1, 1, 0, "test", new User("root", 0, 0), null, new SchedulingInfo(1, 0), new ResourceInfo(0));
+        ProcessControlBlock dummyProcess = new ProcessControlBlock(1, 1, 1, 0, "test", null, null, new SchedulingInfo(1, 0), new ResourceInfo(0));
         
         for (long i = 0; i < 4; i++) {
             mmu.translate(new VirtualAddress(i * 4096), dummyProcess, pt);
@@ -61,7 +61,7 @@ class MMUSimulatorTest {
         MemoryManagementUnit mmu = new MemoryManagementUnit(tlb, handler, stats, bus);
         
         PageTable pt = new PageTable(1);
-        ProcessControlBlock dummyProcess = new ProcessControlBlock(1, 1, 1, 0, "test", new User("root", 0, 0), null, new SchedulingInfo(1, 0), new ResourceInfo(0));
+        ProcessControlBlock dummyProcess = new ProcessControlBlock(1, 1, 1, 0, "test", null, null, new SchedulingInfo(1, 0), new ResourceInfo(0));
         
         for (long i = 0; i < 4; i++) {
             mmu.translate(new VirtualAddress(i * 4096), dummyProcess, pt);
