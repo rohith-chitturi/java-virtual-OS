@@ -41,7 +41,7 @@ public class Shell {
     private void registerBuiltInCommands() {
         commandRegistry.register(new ExitCommand());
         commandRegistry.register(new EchoCommand());
-        commandRegistry.register(new ExecCommand(processService, fsService.getManager()));
+        commandRegistry.register(new ExecCommand(processService, fsService));
         commandRegistry.register(new PwdCommand());
         commandRegistry.register(new ClearCommand());
         commandRegistry.register(new DateCommand());
@@ -77,6 +77,8 @@ public class Shell {
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.CdCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.LsCommand(fsService), "dir");
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.TreeCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.text.GrepCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.text.WcCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.CatCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.WriteCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.AppendCommand(fsService));
@@ -105,53 +107,16 @@ public class Shell {
 
             String input = scanner.nextLine().trim();
             if (input.isEmpty()) continue;
+            
+            if (input.equals("exit")) {
+                running = false;
+                continue;
+            }
 
             history.add(input);
-
-            String[] tokens = input.split("\\s+");
-            String commandName = tokens[0];
-            String[] args = new String[tokens.length - 1];
-            System.arraycopy(tokens, 1, args, 0, tokens.length - 1);
             
-            if (commandName.startsWith("./") || commandName.endsWith(".vexe")) {
-                String[] newArgs = new String[args.length + 1];
-                newArgs[0] = commandName;
-                System.arraycopy(args, 0, newArgs, 1, args.length);
-                args = newArgs;
-                commandName = "exec";
-            }
-
-            Command command = commandRegistry.getCommand(commandName);
-            if (command != null) {
-                boolean isBackground = false;
-                if (args.length > 0 && args[args.length - 1].equals("&")) {
-                    isBackground = true;
-                    String[] newArgs = new String[args.length - 1];
-                    System.arraycopy(args, 0, newArgs, 0, args.length - 1);
-                    args = newArgs;
-                }
-                
-                final String[] finalArgs = args;
-                if (isBackground) {
-                    processService.executeAsProcess(input.replace(" &", ""), () -> {
-                        command.execute(finalArgs, shellContext);
-                    }, shellContext);
-                } else {
-                    try {
-                        CommandResult result = command.execute(finalArgs, shellContext);
-                        if (result.getMessage() != null && !result.getMessage().isEmpty()) {
-                            shellContext.getOut().println(result.getMessage());
-                        }
-                        if (result.shouldTerminateShell()) {
-                            running = false;
-                        }
-                    } catch (Exception e) {
-                        shellContext.getOut().println("Error executing command: " + e.getMessage());
-                    }
-                }
-            } else {
-                shellContext.getOut().println(commandName + ": command not found");
-            }
+            ShellParser parser = new ShellParser(commandRegistry, shellContext, fsService);
+            parser.executeLine(input);
         }
     }
 }

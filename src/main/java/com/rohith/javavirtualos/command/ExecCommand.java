@@ -1,8 +1,6 @@
 package com.rohith.javavirtualos.command;
 
-import com.rohith.javavirtualos.filesystem.FileSystemManager;
-import com.rohith.javavirtualos.filesystem.model.FileNode;
-import com.rohith.javavirtualos.kernel.process.manager.ProcessManager;
+import com.rohith.javavirtualos.services.FileSystemService;
 import com.rohith.javavirtualos.kernel.process.manager.ProcessTask;
 import com.rohith.javavirtualos.kernel.process.runtime.ExecutableLoader;
 import com.rohith.javavirtualos.kernel.process.runtime.ExecutionContext;
@@ -10,38 +8,37 @@ import com.rohith.javavirtualos.kernel.process.runtime.Instruction;
 import com.rohith.javavirtualos.kernel.process.runtime.SystemCallInterface;
 import com.rohith.javavirtualos.kernel.process.runtime.VirtualMachine;
 import com.rohith.javavirtualos.services.ProcessService;
+import com.rohith.javavirtualos.shell.ShellContext;
 
 import java.util.List;
 
 /**
  * Executes a .vexe file by parsing it and loading it into the VirtualMachine.
  */
-public class ExecCommand extends AbstractCommand {
+public class ExecCommand implements Command {
 
     private final ProcessService processService;
-    private final FileSystemManager fsManager;
+    private final FileSystemService fsService;
 
-    public ExecCommand(ProcessService processService, FileSystemManager fsManager) {
-        super("exec", "Executes a .vexe file in the Virtual Machine.", "exec <file.vexe>");
+    public ExecCommand(ProcessService processService, FileSystemService fsService) {
         this.processService = processService;
-        this.fsManager = fsManager;
+        this.fsService = fsService;
     }
 
     @Override
-    public CommandResult execute(String[] args) {
+    public CommandResult execute(String[] args, ShellContext context) {
         if (args.length < 1) {
-            return CommandResult.failure("Usage: " + getUsage());
+            return CommandResult.failure("Usage: exec <file.vexe>");
         }
 
         String path = args[0];
         try {
-            FileNode node = fsManager.resolveFile(path);
-            if (node == null || node.isDirectory()) {
-                return CommandResult.failure("File not found or is a directory: " + path);
+            CommandResult catResult = fsService.catFile(path, context);
+            if (!catResult.isSuccess()) {
+                return CommandResult.failure("Failed to read file: " + catResult.getMessage());
             }
             
-            // Read source from VFS
-            String source = new String(node.readData());
+            String source = catResult.getMessage();
             List<String> sourceLines = List.of(source.split("\\r?\\n"));
             
             // Parse instructions
@@ -54,7 +51,6 @@ public class ExecCommand extends AbstractCommand {
             VirtualMachine vm = new VirtualMachine(ctx, instructions, sys);
             
             // For now, run it synchronously. 
-            // In the future, we will submit this as a ProcessTask to the ProcessManager.
             vm.run();
             
             return CommandResult.success("Program exited with code: " + vm.getExitCode());
@@ -62,5 +58,15 @@ public class ExecCommand extends AbstractCommand {
         } catch (Exception e) {
             return CommandResult.failure("Execution failed: " + e.getMessage());
         }
+    }
+
+    @Override
+    public String getName() {
+        return "exec";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Executes a .vexe file in the Virtual Machine.";
     }
 }
