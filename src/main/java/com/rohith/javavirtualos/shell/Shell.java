@@ -66,7 +66,7 @@ public class Shell {
         commandRegistry.register(new SetSchedulerCommand(processService));
         commandRegistry.register(new AffinityCommand(processService));
         commandRegistry.register(new RunQueueCommand(processService));
-        commandRegistry.register(new BenchmarkSchedulerCommand(processService));
+        commandRegistry.register(new BenchmarkSchedulerCommand());
         commandRegistry.register(new VmMapCommand(processService));
         
         // FS Commands

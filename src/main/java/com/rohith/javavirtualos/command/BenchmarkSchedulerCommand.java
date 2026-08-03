@@ -14,10 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BenchmarkSchedulerCommand implements Command {
-    private final ProcessService processService;
-
-    public BenchmarkSchedulerCommand(ProcessService processService) {
-        this.processService = processService;
+    public BenchmarkSchedulerCommand() {
     }
 
     @Override

@@ -46,6 +46,9 @@ public class JVFSBlockDevice {
         randomAccessFile.seek(offset);
         
         int bytesRead = randomAccessFile.read(buffer);
+        if (bytesRead < 0) {
+            // handle EOF if necessary
+        }
         // If we read less than a full block (e.g. EOF), the rest of the buffer remains 0
         return buffer;
     }
