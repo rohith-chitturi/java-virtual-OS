@@ -79,7 +79,12 @@ public class Shell {
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.TreeCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.text.GrepCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.text.WcCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.text.HeadCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.text.TailCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.CatCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.CpCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.MvCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.FindCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.WriteCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.AppendCommand(fsService));
         
