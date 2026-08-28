@@ -59,4 +59,29 @@ public abstract class MemoryEvent extends KernelEvent {
         @Override public String getMessage() { return "Page Evicted: " + page + " from " + frame; }
     }
 
+    public static class CowFaultEvent extends MemoryEvent {
+        private final com.rohith.javavirtualos.kernel.memory.virtual.VirtualAddress address;
+        public CowFaultEvent(com.rohith.javavirtualos.kernel.memory.virtual.VirtualAddress address) { this.address = address; }
+        @Override public String getMessage() { return "COW Fault: " + address; }
+    }
+
+    public static class SwapInEvent extends MemoryEvent {
+        private final com.rohith.javavirtualos.kernel.memory.virtual.Page page;
+        public SwapInEvent(com.rohith.javavirtualos.kernel.memory.virtual.Page page) { this.page = page; }
+        @Override public String getMessage() { return "Swap In: " + page; }
+    }
+
+    public static class SwapOutEvent extends MemoryEvent {
+        private final com.rohith.javavirtualos.kernel.memory.virtual.Page page;
+        public SwapOutEvent(com.rohith.javavirtualos.kernel.memory.virtual.Page page) { this.page = page; }
+        @Override public String getMessage() { return "Swap Out: " + page; }
+    }
+
+    public static class MemoryMappedEvent extends MemoryEvent {
+        private final int pid;
+        private final String file;
+        public MemoryMappedEvent(int pid, String file) { this.pid = pid; this.file = file; }
+        @Override public String getMessage() { return "Memory Mapped: PID " + pid + " File " + file; }
+    }
+
 }

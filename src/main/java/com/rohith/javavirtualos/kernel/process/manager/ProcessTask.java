@@ -22,6 +22,9 @@ public class ProcessTask implements Runnable {
                 if (!running) break;
 
                 executable.run();
+                if (executable instanceof com.rohith.javavirtualos.kernel.process.runtime.VirtualMachine) {
+                    this.exitCode = ((com.rohith.javavirtualos.kernel.process.runtime.VirtualMachine) executable).getExitCode();
+                }
                 break; // Execute once for simple tasks
             }
         } catch (InterruptedException e) {

@@ -7,8 +7,8 @@ class KernelTest {
 
     @Test
     void testKernelInitialization() {
-        Kernel kernel = new Kernel();
-        kernel.initialize();
+        BootLoader bootLoader = new BootLoader();
+        Kernel kernel = bootLoader.boot();
         assertNotNull(kernel.getSystemContext());
         assertEquals("Java Virtual OS", kernel.getSystemContext().getOsName());
     }

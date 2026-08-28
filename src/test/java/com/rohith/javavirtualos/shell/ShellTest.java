@@ -21,7 +21,7 @@ class ShellTest {
     @Test
     void testShellInitialization() {
         UserManager userManager = new UserManager();
-        Shell shell = new Shell(systemContext, null, null, userManager, null, null);
+        Shell shell = new Shell(systemContext, null, null, userManager, null, null, null);
         assertNotNull(shell);
     }
 }

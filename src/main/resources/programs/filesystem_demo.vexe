@@ -1,0 +1,6 @@
+# filesystem_demo.vexe
+# Opens a file, reads from it, and writes to it.
+SYSCALL 4 0
+SYSCALL 5 0
+SYSCALL 6 0 100
+SYSCALL 1 0

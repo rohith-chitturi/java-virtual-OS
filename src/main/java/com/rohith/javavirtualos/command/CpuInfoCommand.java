@@ -31,17 +31,22 @@ public class CpuInfoCommand implements Command {
         List<CPU> cores = processor.getCores();
 
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Architecture: %s (%d cores)\n", processor.getClass().getSimpleName(), processor.getCoreCount()));
-        sb.append("--------------------------------------------------\n");
-        sb.append(String.format("%-6s %-12s %-12s %-15s\n", "CORE", "STATE", "LOAD(Q)", "CURRENT PROCESS"));
+        sb.append(String.format("Processor: %s\n\n", processor.getClass().getSimpleName()));
 
         for (int i = 0; i < cores.size(); i++) {
             CPU cpu = cores.get(i);
             int qSize = dispatcher.getCoreSchedulers().get(i).getReadyQueue().size();
             ProcessControlBlock curr = cpu.getCurrentProcess();
-            String pName = curr != null ? curr.getCommandName() + " (PID " + curr.getPid() + ")" : "IDLE";
-            sb.append(String.format("%-6d %-12s %-12d %-15s\n", 
-                    cpu.getCoreId(), cpu.getState(), qSize, pName));
+            
+            sb.append(String.format("Core %d\n", cpu.getCoreId()));
+            if (curr != null) {
+                sb.append(String.format("  Running PID %d (%s)\n", curr.getPid(), curr.getCommandName()));
+                int simulatedLoad = 10 + (qSize * 15);
+                if (simulatedLoad > 100) simulatedLoad = 100;
+                sb.append(String.format("  Load %d%%\n\n", simulatedLoad));
+            } else {
+                sb.append("  Idle\n\n");
+            }
         }
 
         return CommandResult.success(sb.toString().trim());

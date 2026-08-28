@@ -3,6 +3,10 @@ package com.rohith.javavirtualos.kernel.memory.virtual;
 import com.rohith.javavirtualos.kernel.events.KernelEventBus;
 import com.rohith.javavirtualos.kernel.memory.*;
 import com.rohith.javavirtualos.kernel.memory.virtual.strategy.*;
+import com.rohith.javavirtualos.kernel.process.pcb.ProcessControlBlock;
+import com.rohith.javavirtualos.kernel.process.pcb.SchedulingInfo;
+import com.rohith.javavirtualos.kernel.process.pcb.ResourceInfo;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,24 +19,25 @@ class MMUSimulatorTest {
         
         MemoryMap memoryMap = new MemoryMap(MemorySize.ofKB(16), MemorySize.ofKB(0));
         FrameTable frameTable = new FrameTable(memoryMap);
-        BackingStore backingStore = new BackingStore();
+        SwapManager swapManager = new SwapManager(new SwapAllocator(64), bus);
         
         LRUStrategy lru = new LRUStrategy();
-        PageFaultHandler handler = new PageFaultHandler(frameTable, backingStore, lru, bus);
+        PageFaultHandler handler = new PageFaultHandler(frameTable, swapManager, lru, bus);
         
         TLB tlb = new TLB(2);
         MMUStatistics stats = new MMUStatistics();
         MemoryManagementUnit mmu = new MemoryManagementUnit(tlb, handler, stats, bus);
         
         PageTable pt = new PageTable(1);
+        ProcessControlBlock dummyProcess = new ProcessControlBlock(1, 1, 1, 0, "test", null, null, new SchedulingInfo(1, 0), new ResourceInfo(0));
         
         for (long i = 0; i < 4; i++) {
-            mmu.translate(new VirtualAddress(i * 4096), pt);
+            mmu.translate(new VirtualAddress(i * 4096), dummyProcess, pt);
         }
         
-        mmu.translate(new VirtualAddress(0), pt);
+        mmu.translate(new VirtualAddress(0), dummyProcess, pt);
         
-        mmu.translate(new VirtualAddress(4 * 4096), pt);
+        mmu.translate(new VirtualAddress(4 * 4096), dummyProcess, pt);
         
         assertEquals(5, stats.getPageFaults());
         assertEquals(PageState.SWAPPED_OUT, pt.getEntry(1).getState());
@@ -46,24 +51,25 @@ class MMUSimulatorTest {
         
         MemoryMap memoryMap = new MemoryMap(MemorySize.ofKB(16), MemorySize.ofKB(0));
         FrameTable frameTable = new FrameTable(memoryMap);
-        BackingStore backingStore = new BackingStore();
+        SwapManager swapManager = new SwapManager(new SwapAllocator(64), bus);
         
         FIFOStrategy fifo = new FIFOStrategy();
-        PageFaultHandler handler = new PageFaultHandler(frameTable, backingStore, fifo, bus);
+        PageFaultHandler handler = new PageFaultHandler(frameTable, swapManager, fifo, bus);
         
         TLB tlb = new TLB(2);
         MMUStatistics stats = new MMUStatistics();
         MemoryManagementUnit mmu = new MemoryManagementUnit(tlb, handler, stats, bus);
         
         PageTable pt = new PageTable(1);
+        ProcessControlBlock dummyProcess = new ProcessControlBlock(1, 1, 1, 0, "test", null, null, new SchedulingInfo(1, 0), new ResourceInfo(0));
         
         for (long i = 0; i < 4; i++) {
-            mmu.translate(new VirtualAddress(i * 4096), pt);
+            mmu.translate(new VirtualAddress(i * 4096), dummyProcess, pt);
         }
         
-        mmu.translate(new VirtualAddress(0), pt);
+        mmu.translate(new VirtualAddress(0), dummyProcess, pt);
         
-        mmu.translate(new VirtualAddress(4 * 4096), pt);
+        mmu.translate(new VirtualAddress(4 * 4096), dummyProcess, pt);
         
         assertEquals(5, stats.getPageFaults());
         assertEquals(PageState.SWAPPED_OUT, pt.getEntry(0).getState());

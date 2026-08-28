@@ -1,0 +1,7 @@
+# calculator.vexe
+# Adds 5 and 7, then prints the result.
+LOAD R1 5
+LOAD R2 7
+ADD R1 R2
+SYSCALL 2 R1
+SYSCALL 1 0
