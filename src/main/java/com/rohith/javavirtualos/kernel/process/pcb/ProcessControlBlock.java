@@ -3,6 +3,8 @@ package com.rohith.javavirtualos.kernel.process.pcb;
 import com.rohith.javavirtualos.kernel.User;
 import com.rohith.javavirtualos.kernel.process.manager.ProcessTask;
 import com.rohith.javavirtualos.kernel.process.state.ProcessState;
+import com.rohith.javavirtualos.kernel.process.descriptor.FileDescriptorTable;
+import com.rohith.javavirtualos.kernel.process.runtime.VirtualMachine;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +33,8 @@ public class ProcessControlBlock {
     private ExitStatus exitStatus;
     private int activeCore = -1;
     private final List<VirtualMemoryArea> vmas;
+    private final FileDescriptorTable fileDescriptorTable;
+    private VirtualMachine virtualMachine;
 
     public ProcessControlBlock(int pid, int tgid, int pgid, int parentPid, String commandName, User owner, ProcessTask task, SchedulingInfo scheduling, ResourceInfo resource) {
         this.pid = pid;
@@ -46,6 +50,7 @@ public class ProcessControlBlock {
         this.state = ProcessState.NEW;
         this.pendingSignals = new ConcurrentLinkedQueue<>();
         this.vmas = new ArrayList<>();
+        this.fileDescriptorTable = new FileDescriptorTable();
     }
 
     public void addChild(int childPid) {
@@ -96,4 +101,8 @@ public class ProcessControlBlock {
     public int getActiveCore() { return activeCore; }
     public void setActiveCore(int activeCore) { this.activeCore = activeCore; }
     public List<VirtualMemoryArea> getVmas() { return vmas; }
+    public FileDescriptorTable getFileDescriptorTable() { return fileDescriptorTable; }
+    public VirtualMachine getVirtualMachine() { return virtualMachine; }
+    public void setVirtualMachine(VirtualMachine virtualMachine) { this.virtualMachine = virtualMachine; }
 }
+

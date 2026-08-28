@@ -8,8 +8,6 @@ import com.rohith.javavirtualos.command.CommandResult;
 import com.rohith.javavirtualos.shell.CommandRegistry;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 

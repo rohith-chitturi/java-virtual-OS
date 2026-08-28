@@ -25,13 +25,15 @@ public class Shell {
     private final UserManager userManager;
     private final NetworkManager networkManager;
     private final DeviceManager deviceManager;
+    private final com.rohith.javavirtualos.kernel.process.runtime.RuntimeStatistics runtimeStats;
 
-    public Shell(SystemContext systemContext, com.rohith.javavirtualos.services.FileSystemService fsService, com.rohith.javavirtualos.services.ProcessService processService, UserManager userManager, NetworkManager networkManager, DeviceManager deviceManager) {
+    public Shell(SystemContext systemContext, com.rohith.javavirtualos.services.FileSystemService fsService, com.rohith.javavirtualos.services.ProcessService processService, UserManager userManager, NetworkManager networkManager, DeviceManager deviceManager, com.rohith.javavirtualos.kernel.process.runtime.RuntimeStatistics runtimeStats) {
         this.fsService = fsService;
         this.processService = processService;
         this.userManager = userManager;
         this.networkManager = networkManager;
         this.deviceManager = deviceManager;
+        this.runtimeStats = runtimeStats;
         this.shellContext = new ShellContext(systemContext, userManager.getUser("root"), System.out, System.in);
         this.commandRegistry = new CommandRegistry();
         this.history = new ArrayList<>();
@@ -41,7 +43,8 @@ public class Shell {
     private void registerBuiltInCommands() {
         commandRegistry.register(new ExitCommand());
         commandRegistry.register(new EchoCommand());
-        commandRegistry.register(new ExecCommand(processService, fsService));
+        commandRegistry.register(new ExecCommand(processService, fsService, runtimeStats));
+        commandRegistry.register(new RuntimeInfoCommand(runtimeStats));
         commandRegistry.register(new PwdCommand());
         commandRegistry.register(new ClearCommand());
         commandRegistry.register(new DateCommand());
@@ -66,7 +69,7 @@ public class Shell {
         commandRegistry.register(new SetSchedulerCommand(processService));
         commandRegistry.register(new AffinityCommand(processService));
         commandRegistry.register(new RunQueueCommand(processService));
-        commandRegistry.register(new BenchmarkSchedulerCommand(processService));
+        commandRegistry.register(new BenchmarkSchedulerCommand());
         commandRegistry.register(new VmMapCommand(processService));
         
         // FS Commands

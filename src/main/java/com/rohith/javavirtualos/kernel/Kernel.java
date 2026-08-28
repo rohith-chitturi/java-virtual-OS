@@ -2,20 +2,12 @@ package com.rohith.javavirtualos.kernel;
 
 import com.rohith.javavirtualos.shell.Shell;
 import com.rohith.javavirtualos.kernel.process.manager.ProcessManager;
-import com.rohith.javavirtualos.services.ProcessService;
-import com.rohith.javavirtualos.services.DefaultProcessService;
 import com.rohith.javavirtualos.kernel.core.KernelConfig;
-import com.rohith.javavirtualos.kernel.core.PIDGenerator;
 import com.rohith.javavirtualos.kernel.events.KernelEventBus;
 import com.rohith.javavirtualos.kernel.metrics.KernelMetrics;
 import com.rohith.javavirtualos.kernel.resource.ResourceManager;
-import com.rohith.javavirtualos.filesystem.FileSystemManager;
-import com.rohith.javavirtualos.services.FileSystemService;
-import com.rohith.javavirtualos.services.DefaultFileSystemService;
 import com.rohith.javavirtualos.kernel.device.DeviceManager;
-import com.rohith.javavirtualos.kernel.device.drivers.NullDevice;
-import com.rohith.javavirtualos.kernel.device.drivers.ZeroDevice;
-import com.rohith.javavirtualos.kernel.device.drivers.RandomDevice;
+
 
 /**
  * The central coordinator for the virtual operating system.
@@ -57,5 +49,33 @@ public class Kernel {
 
     public SystemContext getSystemContext() {
         return systemContext;
+    }
+
+    public KernelConfig getConfig() {
+        return config;
+    }
+
+    public KernelEventBus getEventBus() {
+        return eventBus;
+    }
+
+    public KernelMetrics getMetrics() {
+        return metrics;
+    }
+
+    public ResourceManager getResourceManager() {
+        return resourceManager;
+    }
+
+    public ProcessManager getProcessManager() {
+        return processManager;
+    }
+
+    public com.rohith.javavirtualos.kernel.network.NetworkManager getNetworkManager() {
+        return networkManager;
+    }
+
+    public DeviceManager getDeviceManager() {
+        return deviceManager;
     }
 }

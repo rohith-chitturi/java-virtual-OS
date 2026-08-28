@@ -5,7 +5,7 @@ import com.rohith.javavirtualos.kernel.events.MemoryEvent.TLBHitEvent;
 import com.rohith.javavirtualos.kernel.events.MemoryEvent.TLBMissEvent;
 import com.rohith.javavirtualos.kernel.events.*;
 import com.rohith.javavirtualos.kernel.memory.PhysicalAddress;
-import com.rohith.javavirtualos.kernel.memory.MemoryConstants;
+
 
 import java.util.Optional;
 
@@ -30,10 +30,8 @@ public class MemoryManagementUnit {
         stats.recordTranslation();
         
         PageSize pageSize = PageSize.STANDARD;
-        VirtualMemoryArea targetVma = null;
         for (VirtualMemoryArea vma : pcb.getVmas()) {
             if (vma.contains(vAddr)) {
-                targetVma = vma;
                 pageSize = vma.getPageSize();
                 break;
             }

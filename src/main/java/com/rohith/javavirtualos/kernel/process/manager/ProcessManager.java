@@ -93,6 +93,13 @@ public class ProcessManager {
         ProcessStateMachine.validateTransition(pcb.getState(), ProcessState.READY);
         changeState(pcb, ProcessState.READY);
         
+        if (pcb.getVirtualMachine() != null) {
+            // For user-space executables, the KernelDispatcher manages execution ticks directly.
+            // We just set it to RUNNING (or leave it READY) and it will be picked up by the dispatcher.
+            // Actually, we leave it READY so the KernelDispatcher's load balancer or queue picks it up.
+            return; 
+        }
+        
         ProcessStateMachine.validateTransition(pcb.getState(), ProcessState.RUNNING);
         changeState(pcb, ProcessState.RUNNING);
         
@@ -118,6 +125,7 @@ public class ProcessManager {
             }
         }).start();
     }
+
 
     public void pauseProcess(int pid, User requestor) {
         ProcessControlBlock pcb = findByPID(pid);

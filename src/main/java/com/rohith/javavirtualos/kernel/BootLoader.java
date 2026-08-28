@@ -4,24 +4,47 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Objects;
-
-import com.rohith.javavirtualos.kernel.core.*;
-import com.rohith.javavirtualos.kernel.device.*;
-import com.rohith.javavirtualos.kernel.device.drivers.*;
-import com.rohith.javavirtualos.kernel.events.*;
-import com.rohith.javavirtualos.kernel.events.boot.*;
-import com.rohith.javavirtualos.kernel.metrics.*;
-import com.rohith.javavirtualos.kernel.network.*;
-import com.rohith.javavirtualos.kernel.process.manager.*;
-import com.rohith.javavirtualos.kernel.process.scheduler.*;
-import com.rohith.javavirtualos.kernel.scheduler.cfs.*;
-import com.rohith.javavirtualos.kernel.scheduler.*;
-import com.rohith.javavirtualos.kernel.resource.*;
-import com.rohith.javavirtualos.filesystem.*;
-import com.rohith.javavirtualos.services.*;
-import com.rohith.javavirtualos.shell.*;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.rohith.javavirtualos.kernel.core.KernelConfig;
+import com.rohith.javavirtualos.kernel.core.KernelTick;
+import com.rohith.javavirtualos.kernel.core.MultiCoreProcessor;
+import com.rohith.javavirtualos.kernel.device.DeviceManager;
+import com.rohith.javavirtualos.kernel.device.drivers.NullDevice;
+import com.rohith.javavirtualos.kernel.device.drivers.RandomDevice;
+import com.rohith.javavirtualos.kernel.device.drivers.ZeroDevice;
+import com.rohith.javavirtualos.kernel.events.KernelEventBus;
+import com.rohith.javavirtualos.kernel.events.boot.FileSystemMountedEvent;
+import com.rohith.javavirtualos.kernel.events.boot.KernelBootStartedEvent;
+import com.rohith.javavirtualos.kernel.events.boot.KernelReadyEvent;
+import com.rohith.javavirtualos.kernel.events.boot.MemoryInitializedEvent;
+import com.rohith.javavirtualos.kernel.events.boot.NetworkInitializedEvent;
+import com.rohith.javavirtualos.kernel.metrics.ExecutionTimeline;
+import com.rohith.javavirtualos.kernel.metrics.KernelMetrics;
+import com.rohith.javavirtualos.kernel.network.NetworkManager;
+import com.rohith.javavirtualos.kernel.process.manager.ProcessManager;
+import com.rohith.javavirtualos.kernel.core.PIDGenerator;
+import com.rohith.javavirtualos.kernel.process.scheduler.KernelDispatcher;
+import com.rohith.javavirtualos.kernel.scheduler.Scheduler;
+import com.rohith.javavirtualos.kernel.scheduler.SchedulerStatistics;
+import com.rohith.javavirtualos.kernel.scheduler.cfs.CompletelyFairScheduler;
+import com.rohith.javavirtualos.kernel.resource.ResourceManager;
+import com.rohith.javavirtualos.kernel.SecurityManager;
+import com.rohith.javavirtualos.filesystem.FileSystemManager;
+import com.rohith.javavirtualos.services.FileSystemService;
+import com.rohith.javavirtualos.services.DefaultFileSystemService;
+import com.rohith.javavirtualos.services.DefaultProcessService;
+import com.rohith.javavirtualos.shell.Shell;
+
+import com.rohith.javavirtualos.kernel.process.runtime.syscall.SystemCallDispatcher;
+import com.rohith.javavirtualos.kernel.process.runtime.syscall.SysWriteHandler;
+import com.rohith.javavirtualos.kernel.process.runtime.syscall.SysReadHandler;
+import com.rohith.javavirtualos.kernel.process.runtime.syscall.SysSleepHandler;
+import com.rohith.javavirtualos.kernel.process.runtime.syscall.SysYieldHandler;
+import com.rohith.javavirtualos.kernel.process.runtime.syscall.SysExitHandler;
+import com.rohith.javavirtualos.kernel.process.runtime.syscall.SysGetPidHandler;
+import com.rohith.javavirtualos.kernel.process.runtime.syscall.SysGetUidHandler;
 
 /**
  * Responsible for the startup sequence of the virtual OS.
@@ -53,6 +76,30 @@ public class BootLoader {
         fsManager.setSecurityManager(securityManager);
         FileSystemService fsService = new DefaultFileSystemService(fsManager);
         eventBus.publish(new FileSystemMountedEvent("/"));
+        
+        try {
+            User rootUser = userManager.getUser("root");
+            fsManager.createDirectory("/home", fsManager.getRoot(), rootUser);
+            fsManager.createDirectory("/home/root", fsManager.resolveDirectory("/home", fsManager.getRoot()), rootUser);
+            
+            // hello.vexe
+            fsManager.createFile("/home/root/hello.vexe", fsManager.getRoot(), rootUser);
+            com.rohith.javavirtualos.filesystem.model.Inode hello = fsManager.resolvePath("/home/root/hello.vexe", fsManager.getRoot());
+            if (hello instanceof com.rohith.javavirtualos.filesystem.model.FileNode) {
+                String code = "LOAD R0 42\nSYSCALL 1 1 R0\nEXIT 0\n";
+                ((com.rohith.javavirtualos.filesystem.model.FileNode) hello).setContent(code);
+            }
+            
+            // calc.vexe
+            fsManager.createFile("/home/root/calc.vexe", fsManager.getRoot(), rootUser);
+            com.rohith.javavirtualos.filesystem.model.Inode calc = fsManager.resolvePath("/home/root/calc.vexe", fsManager.getRoot());
+            if (calc instanceof com.rohith.javavirtualos.filesystem.model.FileNode) {
+                String code = "LOAD R0 15\nLOAD R1 27\nADD R0 R1\nSYSCALL 1 1 R0\nEXIT 0\n";
+                ((com.rohith.javavirtualos.filesystem.model.FileNode) calc).setContent(code);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to create demo files: " + e.getMessage());
+        }
 
         NetworkManager networkManager = new NetworkManager(eventBus);
         eventBus.publish(new NetworkInitializedEvent());
@@ -68,6 +115,16 @@ public class BootLoader {
         ProcessManager processManager = new ProcessManager(pidGenerator, eventBus, metrics, config, resourceManager);
         DefaultProcessService processService = new DefaultProcessService(processManager);
 
+        SystemCallDispatcher syscallDispatcher = new SystemCallDispatcher(processManager, fsManager);
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_WRITE, new SysWriteHandler());
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_PRINT, new SysWriteHandler()); // Reusing write handler for print
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_READ, new SysReadHandler());
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_SLEEP, new SysSleepHandler());
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_YIELD, new SysYieldHandler());
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_EXIT, new SysExitHandler());
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_GETPID, new SysGetPidHandler());
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_GETUID, new SysGetUidHandler());
+
         MultiCoreProcessor processor = new MultiCoreProcessor(4);
         List<Scheduler> schedulers = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
@@ -76,11 +133,12 @@ public class BootLoader {
         KernelDispatcher dispatcher = new KernelDispatcher(
             processor, schedulers, new KernelTick(), 
             eventBus, new ExecutionTimeline(), 
-            2, new SchedulerStatistics());
+            2, new SchedulerStatistics(), syscallDispatcher);
         processService.setDispatcher(dispatcher);
 
         System.out.println("[ OK ] Starting Virtual Shell");
-        Shell shell = new Shell(systemContext, fsService, processService, userManager, networkManager, deviceManager);
+        com.rohith.javavirtualos.kernel.process.runtime.RuntimeStatistics runtimeStats = new com.rohith.javavirtualos.kernel.process.runtime.RuntimeStatistics();
+        Shell shell = new Shell(systemContext, fsService, processService, userManager, networkManager, deviceManager, runtimeStats);
 
         Kernel kernel = new Kernel(
             systemContext, config, eventBus, metrics,
@@ -121,3 +179,4 @@ public class BootLoader {
         System.out.println(" Status  : " + context.getOsStatus());
     }
 }
+

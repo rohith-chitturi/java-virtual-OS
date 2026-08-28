@@ -6,7 +6,7 @@ import com.rohith.javavirtualos.kernel.memory.virtual.strategy.*;
 import com.rohith.javavirtualos.kernel.process.pcb.ProcessControlBlock;
 import com.rohith.javavirtualos.kernel.process.pcb.SchedulingInfo;
 import com.rohith.javavirtualos.kernel.process.pcb.ResourceInfo;
-import com.rohith.javavirtualos.kernel.User;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,7 +19,7 @@ class MMUSimulatorTest {
         
         MemoryMap memoryMap = new MemoryMap(MemorySize.ofKB(16), MemorySize.ofKB(0));
         FrameTable frameTable = new FrameTable(memoryMap);
-        SwapManager swapManager = new SwapManager(new SwapAllocator(64), null, bus);
+        SwapManager swapManager = new SwapManager(new SwapAllocator(64), bus);
         
         LRUStrategy lru = new LRUStrategy();
         PageFaultHandler handler = new PageFaultHandler(frameTable, swapManager, lru, bus);
@@ -51,7 +51,7 @@ class MMUSimulatorTest {
         
         MemoryMap memoryMap = new MemoryMap(MemorySize.ofKB(16), MemorySize.ofKB(0));
         FrameTable frameTable = new FrameTable(memoryMap);
-        SwapManager swapManager = new SwapManager(new SwapAllocator(64), null, bus);
+        SwapManager swapManager = new SwapManager(new SwapAllocator(64), bus);
         
         FIFOStrategy fifo = new FIFOStrategy();
         PageFaultHandler handler = new PageFaultHandler(frameTable, swapManager, fifo, bus);

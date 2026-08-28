@@ -16,7 +16,7 @@ class SwapManagerTest {
         allocator = new SwapAllocator(10);
         FileSystemManager fsManager = new FileSystemManager();
         KernelEventBus eventBus = new KernelEventBus();
-        swapManager = new SwapManager(allocator, fsManager, eventBus);
+        swapManager = new SwapManager(allocator, eventBus);
     }
 
     @Test
