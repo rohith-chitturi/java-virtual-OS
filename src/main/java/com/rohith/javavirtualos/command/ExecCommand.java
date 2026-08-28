@@ -5,7 +5,7 @@ import com.rohith.javavirtualos.services.FileSystemService;
 import com.rohith.javavirtualos.kernel.process.runtime.ExecutableLoader;
 import com.rohith.javavirtualos.kernel.process.runtime.ExecutionContext;
 import com.rohith.javavirtualos.kernel.process.runtime.Instruction;
-import com.rohith.javavirtualos.kernel.process.runtime.SystemCallInterface;
+import com.rohith.javavirtualos.kernel.process.runtime.syscall.SystemCallDispatcher;
 import com.rohith.javavirtualos.kernel.process.runtime.VirtualMachine;
 import com.rohith.javavirtualos.services.ProcessService;
 import com.rohith.javavirtualos.shell.ShellContext;
@@ -19,10 +19,12 @@ public class ExecCommand implements Command {
 
     private final ProcessService processService;
     private final FileSystemService fsService;
+    private final com.rohith.javavirtualos.kernel.process.runtime.RuntimeStatistics stats;
 
-    public ExecCommand(ProcessService processService, FileSystemService fsService) {
+    public ExecCommand(ProcessService processService, FileSystemService fsService, com.rohith.javavirtualos.kernel.process.runtime.RuntimeStatistics stats) {
         this.processService = processService;
         this.fsService = fsService;
+        this.stats = stats;
     }
 
     @Override
@@ -32,6 +34,11 @@ public class ExecCommand implements Command {
         }
 
         String path = args[0];
+        boolean background = false;
+        if (args[args.length - 1].equals("&")) {
+            background = true;
+        }
+
         try {
             CommandResult catResult = fsService.catFile(path, context);
             if (!catResult.isSuccess()) {
@@ -42,23 +49,39 @@ public class ExecCommand implements Command {
             List<String> sourceLines = List.of(source.split("\\r?\\n"));
             
             // Parse instructions
-            List<Instruction> instructions = ExecutableLoader.parse(sourceLines);
+            com.rohith.javavirtualos.kernel.process.runtime.Executable executable = ExecutableLoader.parse(sourceLines);
+            if (stats != null) stats.incrementExecutablesLoaded();
             
-            // We need a context. Let's just create a dummy context and VM for synchronous execution.
-            // In a full implementation, this should spawn a background process via ProcessService.
+            // Create VM context
             ExecutionContext ctx = new ExecutionContext(0);
-            SystemCallInterface sys = new SystemCallInterface(processService.getManager(), null);
-            VirtualMachine vm = new VirtualMachine(ctx, instructions, sys);
+            VirtualMachine vm = new VirtualMachine(ctx, executable, stats);
             
-            // For now, run it synchronously. 
-            vm.run();
+            // Create Process
+            com.rohith.javavirtualos.kernel.process.pcb.ProcessControlBlock pcb = processService.getManager().createProcess(executable.getName(), context.getCurrentUser(), null, 1);
+            pcb.setVirtualMachine(vm);
             
-            return CommandResult.success("Program exited with code: " + vm.getExitCode());
+            // Allocate File Descriptors (0: stdin, 1: stdout, 2: stderr)
+            pcb.getFileDescriptorTable().allocate(new com.rohith.javavirtualos.kernel.process.descriptor.StreamDescriptor(context.getIn()));
+            pcb.getFileDescriptorTable().allocate(new com.rohith.javavirtualos.kernel.process.descriptor.StreamDescriptor(context.getOut()));
+            pcb.getFileDescriptorTable().allocate(new com.rohith.javavirtualos.kernel.process.descriptor.StreamDescriptor(context.getOut()));
+            
+            // Submit to OS
+            processService.getManager().startProcess(pcb.getPid());
+            processService.getDispatcher().submitProcess(pcb);
+            
+            if (background) {
+                return CommandResult.success("[" + pcb.getPid() + "] " + executable.getName() + " started in background");
+            } else {
+                // Wait for process to finish
+                com.rohith.javavirtualos.kernel.process.pcb.ExitStatus status = processService.getManager().waitProcess(1, pcb.getPid());
+                return CommandResult.success("Program exited with code: " + status.getExitCode());
+            }
             
         } catch (Exception e) {
             return CommandResult.failure("Execution failed: " + e.getMessage());
         }
     }
+
 
     @Override
     public String getName() {

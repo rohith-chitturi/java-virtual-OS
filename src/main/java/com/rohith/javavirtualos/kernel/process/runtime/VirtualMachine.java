@@ -1,134 +1,216 @@
 package com.rohith.javavirtualos.kernel.process.runtime;
 
-import java.util.List;
+import com.rohith.javavirtualos.kernel.process.runtime.syscall.SystemCallRequest;
+import com.rohith.javavirtualos.kernel.process.runtime.syscall.SystemCallResult;
+import com.rohith.javavirtualos.kernel.exceptions.IllegalInstructionException;
 
 /**
  * The core CPU emulator for the custom instruction set.
- * Executes instructions sequentially and interacts with the SystemCallInterface.
+ * Executes exactly ONE instruction per step().
  */
-public class VirtualMachine implements Runnable {
+public class VirtualMachine {
     
     private final ExecutionContext context;
-    private final List<Instruction> programMemory;
-    private final SystemCallInterface syscallInterface;
+    private final Executable executable;
+    private final RuntimeStatistics stats;
     
-    private boolean isRunning;
+    private boolean halted = false;
     private int exitCode = 0;
+    private int instructionCount = 0;
+    private String faultState = null;
 
-    public VirtualMachine(ExecutionContext context, List<Instruction> programMemory, SystemCallInterface syscallInterface) {
+    public VirtualMachine(ExecutionContext context, Executable executable, RuntimeStatistics stats) {
         this.context = context;
-        this.programMemory = programMemory;
-        this.syscallInterface = syscallInterface;
-        this.isRunning = false;
+        this.executable = executable;
+        this.stats = stats;
+    }
+
+    public VirtualMachine(ExecutionContext context, Executable executable) {
+        this(context, executable, null);
     }
 
     /**
-     * Runs the virtual machine until it exits or encounters an error.
+     * Executes exactly ONE instruction and returns the ExecutionResult.
      */
-    public void run() {
-        isRunning = true;
-        
-        while (isRunning && context.getPc() < programMemory.size()) {
-            Instruction instr = programMemory.get(context.getPc());
-            executeInstruction(instr);
+    public ExecutionResult step() {
+        if (halted) return ExecutionResult.HALT();
+        if (context.getPc() >= executable.getInstructions().size()) {
+            halted = true;
+            return ExecutionResult.EXIT(0);
+        }
+
+        try {
+            Instruction instr = executable.getInstructions().get(context.getPc());
+            ExecutionResult result = executeInstruction(instr);
             
-            // If it's a jump, PC is already updated. Otherwise, increment.
-            if (!isJumpInstruction(instr.getOpcode())) {
+            if (stats != null) stats.addInstructionsExecuted(1);
+            
+            if (!isJumpInstruction(instr.getOpcode()) && result.getType() != ExecutionResult.Type.SYSCALL) {
                 context.incrementPc();
             }
+            
+            instructionCount++;
+            return result;
+        } catch (Exception e) {
+            halted = true;
+            faultState = e.getMessage();
+            if (stats != null) stats.incrementRuntimeFaults();
+            return ExecutionResult.FAULT(faultState);
         }
     }
 
-    private void executeInstruction(Instruction instr) {
+    private ExecutionResult executeInstruction(Instruction instr) {
         switch (instr.getOpcode()) {
-            case LOAD:
+            case LOAD: {
                 int regLoad = parseRegister(instr.getOperand(0));
-                int valLoad = Integer.parseInt(instr.getOperand(1));
+                int valLoad = parseInt(instr.getOperand(1));
                 context.setRegister(regLoad, valLoad);
-                break;
-            case MOV:
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case MOV: {
                 int regDest = parseRegister(instr.getOperand(0));
                 int regSrc = parseRegister(instr.getOperand(1));
                 context.setRegister(regDest, context.getRegister(regSrc));
-                break;
-            case ADD:
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case ADD: {
                 int addDest = parseRegister(instr.getOperand(0));
                 int addSrc = parseRegister(instr.getOperand(1));
                 context.setRegister(addDest, context.getRegister(addDest) + context.getRegister(addSrc));
-                break;
-            case SUB:
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case SUB: {
                 int subDest = parseRegister(instr.getOperand(0));
                 int subSrc = parseRegister(instr.getOperand(1));
                 context.setRegister(subDest, context.getRegister(subDest) - context.getRegister(subSrc));
-                break;
-            case CMP:
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case MUL: {
+                int mulDest = parseRegister(instr.getOperand(0));
+                int mulSrc = parseRegister(instr.getOperand(1));
+                context.setRegister(mulDest, context.getRegister(mulDest) * context.getRegister(mulSrc));
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case DIV: {
+                int divDest = parseRegister(instr.getOperand(0));
+                int divSrc = parseRegister(instr.getOperand(1));
+                int den = context.getRegister(divSrc);
+                if (den == 0) throw new ArithmeticException("Division by zero");
+                context.setRegister(divDest, context.getRegister(divDest) / den);
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case INC: {
+                int incReg = parseRegister(instr.getOperand(0));
+                context.setRegister(incReg, context.getRegister(incReg) + 1);
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case DEC: {
+                int decReg = parseRegister(instr.getOperand(0));
+                context.setRegister(decReg, context.getRegister(decReg) - 1);
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case CMP: {
                 int cmpA = context.getRegister(parseRegister(instr.getOperand(0)));
                 int cmpB = context.getRegister(parseRegister(instr.getOperand(1)));
                 context.setZeroFlag(cmpA == cmpB);
                 context.setNegativeFlag(cmpA < cmpB);
-                break;
-            case JMP:
-                context.setPc(Integer.parseInt(instr.getOperand(0)));
-                break;
-            case JEQ:
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case JMP: {
+                context.setPc(parseInt(instr.getOperand(0)));
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case JZ: {
                 if (context.isZeroFlag()) {
-                    context.setPc(Integer.parseInt(instr.getOperand(0)));
+                    context.setPc(parseInt(instr.getOperand(0)));
                 } else {
                     context.incrementPc();
                 }
-                break;
-            case JNE:
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case JNZ: {
                 if (!context.isZeroFlag()) {
-                    context.setPc(Integer.parseInt(instr.getOperand(0)));
+                    context.setPc(parseInt(instr.getOperand(0)));
                 } else {
                     context.incrementPc();
                 }
-                break;
-            case PRINT:
-                int printReg = parseRegister(instr.getOperand(0));
-                // Technically we could use SYSCALL for this, but PRINT is a convenient debug instruction
-                System.out.println(context.getRegister(printReg));
-                break;
-            case SLEEP:
-                try {
-                    Thread.sleep(Integer.parseInt(instr.getOperand(0)));
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                break;
-            case YIELD:
-                Thread.yield();
-                break;
-            case SYSCALL:
-                int syscallId = Integer.parseInt(instr.getOperand(0));
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case CALL: {
+                context.pushCall(context.getPc() + 1);
+                context.setPc(parseInt(instr.getOperand(0)));
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case RETURN: {
+                context.setPc(context.popCall());
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case NOP: {
+                return ExecutionResult.INSTRUCTION_EXECUTED();
+            }
+            case PRINT: {
+                // Synthesize a write syscall to FD 1 (stdout)
+                // We'll pass a special syscall ID for PRINT, or just use WRITE.
+                // According to requirements: "Prefer routing PRINT through the same abstraction used by SYS_WRITE"
+                // However, PRINT takes a register or string. Let's pass it via a special SYS_PRINT for simplicity,
+                // and the handler will use VirtualOutput.
+                return ExecutionResult.SYSCALL(new SystemCallRequest(2, parseOperand(instr.getOperand(0)), 0)); 
+            }
+            case SLEEP: {
+                int duration = parseInt(instr.getOperand(0));
+                return ExecutionResult.SLEEP(duration);
+            }
+            case YIELD: {
+                return ExecutionResult.YIELD();
+            }
+            case SYSCALL: {
+                if (stats != null) stats.incrementSystemCallsInvoked();
+                // SYSCALL ID_REG, ARG1_REG, ARG2_REG
+                // or SYSCALL ID_VAL
+                int syscallId = parseOperand(instr.getOperand(0));
                 int arg1 = 0;
                 int arg2 = 0;
                 if (instr.getOperands().length > 1) {
-                    arg1 = context.getRegister(parseRegister(instr.getOperand(1)));
+                    arg1 = parseOperand(instr.getOperand(1));
                 }
                 if (instr.getOperands().length > 2) {
-                    arg2 = context.getRegister(parseRegister(instr.getOperand(2)));
+                    arg2 = parseOperand(instr.getOperand(2));
                 }
-                
-                int result = syscallInterface.handleSyscall(context, syscallId, arg1, arg2);
-                context.setRegister(0, result); // Typically store syscall result in R0
                 
                 if (syscallId == 1) { // 1 = EXIT
-                    this.exitCode = result;
-                    isRunning = false;
+                    this.exitCode = arg1;
+                    this.halted = true;
+                    return ExecutionResult.EXIT(arg1);
                 }
-                break;
-            case EXIT:
-                this.exitCode = context.getRegister(0);
-                isRunning = false;
-                break;
+                
+                return ExecutionResult.SYSCALL(new SystemCallRequest(syscallId, arg1, arg2));
+            }
+            case EXIT: {
+                this.exitCode = parseOperand(instr.getOperand(0));
+                this.halted = true;
+                return ExecutionResult.EXIT(this.exitCode);
+            }
+            case HALT: {
+                this.halted = true;
+                return ExecutionResult.HALT();
+            }
             default:
-                throw new UnsupportedOperationException("Opcode " + instr.getOpcode() + " not implemented in VM");
+                throw new IllegalInstructionException("Opcode " + instr.getOpcode() + " not implemented in VM");
         }
+    }
+    
+    /**
+     * Called by the Dispatcher when a SYSCALL completes asynchronously.
+     */
+    public void setSystemCallResult(SystemCallResult result) {
+        context.setRegister(0, result.getReturnValue());
+        context.incrementPc();
     }
 
     private boolean isJumpInstruction(Opcode opcode) {
-        return opcode == Opcode.JMP || opcode == Opcode.JEQ || opcode == Opcode.JNE || opcode == Opcode.CALL || opcode == Opcode.RETURN;
+        return opcode == Opcode.JMP || 
+               opcode == Opcode.JZ || opcode == Opcode.JNZ || 
+               opcode == Opcode.CALL || opcode == Opcode.RETURN;
     }
 
     private int parseRegister(String regStr) {
@@ -138,7 +220,26 @@ public class VirtualMachine implements Runnable {
         throw new IllegalArgumentException("Invalid register format: " + regStr);
     }
     
-    public int getExitCode() {
-        return exitCode;
+    private int parseInt(String str) {
+        try {
+            return Integer.parseInt(str);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid integer format: " + str);
+        }
     }
+    
+    private int parseOperand(String operand) {
+        if (operand.startsWith("R") || operand.startsWith("r")) {
+            return context.getRegister(parseRegister(operand));
+        } else {
+            return parseInt(operand);
+        }
+    }
+    
+    public int getExitCode() { return exitCode; }
+    public boolean isHalted() { return halted; }
+    public int getInstructionCount() { return instructionCount; }
+    public String getFaultState() { return faultState; }
+    public ExecutionContext getContext() { return context; }
 }
+

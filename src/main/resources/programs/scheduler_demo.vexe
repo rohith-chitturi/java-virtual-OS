@@ -1,0 +1,12 @@
+# scheduler_demo.vexe
+# Yields the CPU a few times to demonstrate scheduling.
+LOAD R1 3
+LOAD R2 1
+LOAD R3 0
+# Loop start (instruction 3)
+YIELD
+SYSCALL 2 R1
+SUB R1 R2
+CMP R1 R3
+JNE 3
+SYSCALL 1 0

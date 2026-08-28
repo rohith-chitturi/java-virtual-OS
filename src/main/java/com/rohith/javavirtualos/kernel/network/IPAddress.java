@@ -10,6 +10,11 @@ public class IPAddress {
     private final String address;
     private final byte[] octets;
 
+    public byte[] getOctets() {
+        return octets;
+    }
+
+
     public IPAddress(String address) {
         if (!isValid(address)) {
             throw new IllegalArgumentException("Invalid IPv4 address: " + address);

@@ -8,11 +8,10 @@ import java.util.List;
  */
 public class Debugger {
     
-    private final VirtualMachine vm;
+
     private final List<Breakpoint> breakpoints;
     
     public Debugger(VirtualMachine vm) {
-        this.vm = vm;
         this.breakpoints = new ArrayList<>();
     }
     

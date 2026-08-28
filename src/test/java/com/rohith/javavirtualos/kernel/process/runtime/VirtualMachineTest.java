@@ -20,12 +20,13 @@ class VirtualMachineTest {
             "EXIT"
         );
         
-        List<Instruction> instructions = ExecutableLoader.parse(source);
+        Executable executable = ExecutableLoader.parse(source);
         ExecutionContext ctx = new ExecutionContext(1);
-        SystemCallInterface sys = new SystemCallInterface(null, null);
-        VirtualMachine vm = new VirtualMachine(ctx, instructions, sys);
+        VirtualMachine vm = new VirtualMachine(ctx, executable);
         
-        vm.run();
+        while(!vm.isHalted()) {
+            vm.step();
+        }
         
         assertEquals(30, ctx.getRegister(0));
         assertEquals(20, ctx.getRegister(1));
@@ -41,7 +42,7 @@ class VirtualMachineTest {
             
             // Loop start (PC=3)
             "CMP R0 R1",
-            "JEQ 8",        // If R0 == R1 (5), jump to EXIT (PC=8)
+            "JZ 8",         // If R0 == R1 (5), jump to EXIT (PC=8)
             "ADD R0 R2",
             "JMP 3",        // Jump back to CMP
             
@@ -49,14 +50,16 @@ class VirtualMachineTest {
             "EXIT"
         );
         
-        List<Instruction> instructions = ExecutableLoader.parse(source);
+        Executable executable = ExecutableLoader.parse(source);
         ExecutionContext ctx = new ExecutionContext(2);
-        SystemCallInterface sys = new SystemCallInterface(null, null);
-        VirtualMachine vm = new VirtualMachine(ctx, instructions, sys);
+        VirtualMachine vm = new VirtualMachine(ctx, executable);
         
-        vm.run();
+        while(!vm.isHalted()) {
+            vm.step();
+        }
         
         assertEquals(5, ctx.getRegister(0));
         assertEquals(5, ctx.getRegister(1));
     }
 }
+

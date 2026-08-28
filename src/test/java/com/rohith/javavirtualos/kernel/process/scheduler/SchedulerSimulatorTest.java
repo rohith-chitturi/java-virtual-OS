@@ -26,7 +26,7 @@ class SchedulerSimulatorTest {
         SchedulerStatistics statistics = new SchedulerStatistics();
         
         KernelDispatcher dispatcher = new KernelDispatcher(processor, java.util.Collections.singletonList(scheduler), 
-                                                           tick, bus, timeline, 2, statistics);
+                                                           tick, bus, timeline, 2, statistics, null);
         
         User root = new User("root", "pwd");
         

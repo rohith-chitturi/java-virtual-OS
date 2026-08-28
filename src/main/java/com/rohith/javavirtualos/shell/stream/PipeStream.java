@@ -4,7 +4,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+
 
 /**
  * A VirtualStream that connects an output to an input, allowing IPC between commands (e.g. command1 | command2).

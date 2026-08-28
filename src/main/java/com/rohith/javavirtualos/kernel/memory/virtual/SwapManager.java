@@ -1,6 +1,6 @@
 package com.rohith.javavirtualos.kernel.memory.virtual;
 
-import com.rohith.javavirtualos.filesystem.model.FileNode;
+
 import com.rohith.javavirtualos.filesystem.FileSystemManager;
 import com.rohith.javavirtualos.kernel.events.KernelEventBus;
 import com.rohith.javavirtualos.kernel.events.MemoryEvent.SwapInEvent;
@@ -11,13 +11,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SwapManager {
     private final SwapAllocator allocator;
-    private final FileSystemManager fsManager;
+
     private final KernelEventBus eventBus;
     private final Map<Page, Integer> pageSwapMap; // Maps Page to Swap Slot
 
-    public SwapManager(SwapAllocator allocator, FileSystemManager fsManager, KernelEventBus eventBus) {
+    public SwapManager(SwapAllocator allocator, KernelEventBus eventBus) {
         this.allocator = allocator;
-        this.fsManager = fsManager;
         this.eventBus = eventBus;
         this.pageSwapMap = new ConcurrentHashMap<>();
     }

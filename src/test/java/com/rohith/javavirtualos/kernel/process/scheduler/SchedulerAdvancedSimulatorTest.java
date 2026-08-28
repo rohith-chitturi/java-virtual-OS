@@ -11,7 +11,7 @@ import com.rohith.javavirtualos.kernel.process.pcb.SchedulingInfo;
 import com.rohith.javavirtualos.kernel.scheduler.Scheduler;
 import com.rohith.javavirtualos.kernel.scheduler.SchedulerStatistics;
 import com.rohith.javavirtualos.kernel.scheduler.cfs.CompletelyFairScheduler;
-import com.rohith.javavirtualos.kernel.scheduler.edf.EarliestDeadlineFirstScheduler;
+
 import com.rohith.javavirtualos.kernel.scheduler.mlfq.MultiLevelFeedbackQueueScheduler;
 import com.rohith.javavirtualos.kernel.scheduler.roundrobin.RoundRobinScheduler;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,7 +53,7 @@ class SchedulerAdvancedSimulatorTest {
         List<Scheduler> schedulers = new ArrayList<>();
         for (int i = 0; i < 4; i++) schedulers.add(new RoundRobinScheduler());
         
-        KernelDispatcher dispatcher = new KernelDispatcher(processor, schedulers, tick, bus, timeline, 2, statistics);
+        KernelDispatcher dispatcher = new KernelDispatcher(processor, schedulers, tick, bus, timeline, 2, statistics, null);
         
         ProcessControlBlock p1 = createProcess(101, 10);
         ProcessControlBlock p2 = createProcess(102, 10);
@@ -88,7 +88,7 @@ class SchedulerAdvancedSimulatorTest {
         List<Scheduler> schedulers = new ArrayList<>();
         for (int i = 0; i < 4; i++) schedulers.add(new RoundRobinScheduler());
         
-        KernelDispatcher dispatcher = new KernelDispatcher(processor, schedulers, tick, bus, timeline, 2, statistics);
+        KernelDispatcher dispatcher = new KernelDispatcher(processor, schedulers, tick, bus, timeline, 2, statistics, null);
         
         ProcessControlBlock p1 = createProcess(101, 20);
         p1.getSchedulingInfo().setCpuAffinityMask(1L << 2); // Core 2
@@ -114,7 +114,7 @@ class SchedulerAdvancedSimulatorTest {
         schedulers.add(new RoundRobinScheduler());
         schedulers.add(new RoundRobinScheduler());
         
-        KernelDispatcher dispatcher = new KernelDispatcher(processor, schedulers, tick, bus, timeline, 2, statistics);
+        KernelDispatcher dispatcher = new KernelDispatcher(processor, schedulers, tick, bus, timeline, 2, statistics, null);
         
         ProcessControlBlock p1 = createProcess(101, 20);
         ProcessControlBlock p2 = createProcess(102, 20);
