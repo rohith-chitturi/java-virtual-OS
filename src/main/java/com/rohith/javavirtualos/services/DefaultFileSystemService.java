@@ -136,6 +136,21 @@ public class DefaultFileSystemService implements FileSystemService {
     }
 
     @Override
+    public CommandResult readExecutable(String path, ShellContext context) {
+        try {
+            DirectoryNode currentDir = getCurrentDir(context);
+            Inode node = manager.resolvePath(path, currentDir);
+            if (node == null) return CommandResult.failure("File not found: " + path);
+            if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
+            
+            manager.validateExecuteAccess(node, context.getCurrentUser());
+            return CommandResult.success(((FileNode) node).getContent());
+        } catch (FileSystemException e) {
+            return CommandResult.failure(e.getMessage());
+        }
+    }
+
+    @Override
     public CommandResult writeFile(String path, String content, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);

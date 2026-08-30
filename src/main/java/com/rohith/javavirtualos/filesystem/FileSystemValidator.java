@@ -75,6 +75,12 @@ public class FileSystemValidator {
         }
     }
 
+    public void validateExecute(Inode target, User currentUser) throws FileSystemException {
+        if (securityManager != null && !securityManager.canExecute(currentUser, target)) {
+            throw new FileSystemException("Permission denied");
+        }
+    }
+
     public void validateWrite(Inode target, User currentUser) throws FileSystemException {
         if (securityManager != null && !securityManager.canWrite(currentUser, target)) {
             throw new FileSystemException("Permission denied");

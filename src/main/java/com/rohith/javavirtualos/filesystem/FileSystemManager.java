@@ -107,6 +107,10 @@ public class FileSystemManager {
         validator.validateRead(target, currentUser);
     }
     
+    public void validateExecuteAccess(Inode target, User currentUser) throws FileSystemException {
+        validator.validateExecute(target, currentUser);
+    }
+    
     public void validateWriteAccess(Inode target, User currentUser) throws FileSystemException {
         validator.validateWrite(target, currentUser);
     }
