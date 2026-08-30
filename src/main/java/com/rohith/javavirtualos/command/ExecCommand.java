@@ -29,6 +29,11 @@ public class ExecCommand implements Command {
 
     @Override
     public CommandResult execute(String[] args, ShellContext context) {
+        return execute(args, context, null, null);
+    }
+
+    @Override
+    public CommandResult execute(String[] args, ShellContext context, com.rohith.javavirtualos.shell.stream.VirtualInput in, com.rohith.javavirtualos.shell.stream.VirtualOutput out) {
         if (args.length < 1) {
             return CommandResult.failure("Usage: exec <file.vexe>");
         }
@@ -40,12 +45,12 @@ public class ExecCommand implements Command {
         }
 
         try {
-            CommandResult catResult = fsService.catFile(path, context);
-            if (!catResult.isSuccess()) {
-                return CommandResult.failure("Failed to read file: " + catResult.getMessage());
+            CommandResult readResult = fsService.readExecutable(path, context);
+            if (!readResult.isSuccess()) {
+                return CommandResult.failure("Failed to read executable: " + readResult.getMessage());
             }
             
-            String source = catResult.getMessage();
+            String source = readResult.getMessage();
             List<String> sourceLines = List.of(source.split("\\r?\\n"));
             
             // Parse instructions
@@ -61,9 +66,9 @@ public class ExecCommand implements Command {
             pcb.setVirtualMachine(vm);
             
             // Allocate File Descriptors (0: stdin, 1: stdout, 2: stderr)
-            pcb.getFileDescriptorTable().allocate(new com.rohith.javavirtualos.kernel.process.descriptor.StreamDescriptor(context.getIn()));
-            pcb.getFileDescriptorTable().allocate(new com.rohith.javavirtualos.kernel.process.descriptor.StreamDescriptor(context.getOut()));
-            pcb.getFileDescriptorTable().allocate(new com.rohith.javavirtualos.kernel.process.descriptor.StreamDescriptor(context.getOut()));
+            pcb.getFileDescriptorTable().allocate(new com.rohith.javavirtualos.kernel.process.descriptor.StreamDescriptor(in != null ? in.getInputStream() : context.getIn()));
+            pcb.getFileDescriptorTable().allocate(new com.rohith.javavirtualos.kernel.process.descriptor.StreamDescriptor(out != null ? out.getPrintStream() : context.getOut()));
+            pcb.getFileDescriptorTable().allocate(new com.rohith.javavirtualos.kernel.process.descriptor.StreamDescriptor(out != null ? out.getPrintStream() : context.getOut()));
             
             // Submit to OS
             processService.getManager().startProcess(pcb.getPid());

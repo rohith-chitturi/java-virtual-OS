@@ -15,6 +15,7 @@ public interface FileSystemService {
     CommandResult touchFile(String path, ShellContext context);
     CommandResult printTree(String path, ShellContext context);
     CommandResult catFile(String path, ShellContext context);
+    CommandResult readExecutable(String path, ShellContext context);
     CommandResult writeFile(String path, String content, ShellContext context);
     CommandResult appendFile(String path, String content, ShellContext context);
     CommandResult findFile(String path, String pattern, ShellContext context);
