@@ -52,6 +52,7 @@ public class Shell {
         commandRegistry.register(new VersionCommand());
         commandRegistry.register(new HelpCommand(commandRegistry));
         commandRegistry.register(new HistoryCommand(history));
+        commandRegistry.register(new AliasCommand());
         
         // User Commands
         commandRegistry.register(new WhoamiCommand());

@@ -81,22 +81,43 @@ public class BootLoader {
             User rootUser = userManager.getUser("root");
             fsManager.createDirectory("/home", fsManager.getRoot(), rootUser);
             fsManager.createDirectory("/home/root", fsManager.resolveDirectory("/home", fsManager.getRoot()), rootUser);
-            
-            // hello.vexe
-            fsManager.createFile("/home/root/hello.vexe", fsManager.getRoot(), rootUser);
-            com.rohith.javavirtualos.filesystem.model.Inode hello = fsManager.resolvePath("/home/root/hello.vexe", fsManager.getRoot());
-            if (hello instanceof com.rohith.javavirtualos.filesystem.model.FileNode) {
-                String code = "LOAD R0 42\nSYSCALL 1 1 R0\nEXIT 0\n";
-                ((com.rohith.javavirtualos.filesystem.model.FileNode) hello).setContent(code);
-            }
-            
-            // calc.vexe
-            fsManager.createFile("/home/root/calc.vexe", fsManager.getRoot(), rootUser);
-            com.rohith.javavirtualos.filesystem.model.Inode calc = fsManager.resolvePath("/home/root/calc.vexe", fsManager.getRoot());
-            if (calc instanceof com.rohith.javavirtualos.filesystem.model.FileNode) {
-                String code = "LOAD R0 15\nLOAD R1 27\nADD R0 R1\nSYSCALL 1 1 R0\nEXIT 0\n";
-                ((com.rohith.javavirtualos.filesystem.model.FileNode) calc).setContent(code);
-            }
+            // Helper for creating files if missing
+            java.util.function.BiConsumer<String, String> createDemoIfMissing = (name, code) -> {
+                try {
+                    String path = "/home/root/" + name;
+                    if (fsManager.resolvePath(path, fsManager.getRoot()) == null) {
+                        fsManager.createFile(name, fsManager.resolveDirectory("/home/root", fsManager.getRoot()), rootUser);
+                        com.rohith.javavirtualos.filesystem.model.Inode inode = fsManager.resolvePath(path, fsManager.getRoot());
+                        if (inode instanceof com.rohith.javavirtualos.filesystem.model.FileNode) {
+                            ((com.rohith.javavirtualos.filesystem.model.FileNode) inode).setContent(code);
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to create demo " + name + ": " + e.getMessage());
+                }
+            };
+
+            createDemoIfMissing.accept("hello.vexe", 
+                "LOAD R0 1\nLOAD R1 72\nSYSCALL 6 R0 R1\nLOAD R1 101\nSYSCALL 6 R0 R1\nLOAD R1 108\nSYSCALL 6 R0 R1\nSYSCALL 6 R0 R1\nLOAD R1 111\nSYSCALL 6 R0 R1\nLOAD R1 10\nSYSCALL 6 R0 R1\nEXIT 0\n");
+
+            createDemoIfMissing.accept("calc.vexe", 
+                "LOAD R0 15\nLOAD R1 27\nADD R0 R1\nSYSCALL 2 R0\nEXIT 0\n");
+
+            createDemoIfMissing.accept("loop.vexe", 
+                "LOAD R0 0\nLOAD R1 10\nCMP R0 R1\nJZ 7\nINC R0\nYIELD\nJMP 2\nEXIT 0\n");
+
+            createDemoIfMissing.accept("scheduler_demo.vexe", 
+                "LOAD R0 0\nLOAD R1 50\nCMP R0 R1\nJZ 7\nINC R0\nYIELD\nJMP 2\nEXIT 0\n");
+
+            createDemoIfMissing.accept("memory_demo.vexe", 
+                "LOAD R0 100\nLOAD R1 200\nADD R0 R1\nSYSCALL 2 R0\nEXIT 0\n");
+
+            createDemoIfMissing.accept("filesystem_demo.vexe", 
+                "SYSCALL 4 1 0 \"test.txt\"\nMOV R1 R0\nLOAD R2 65\nSYSCALL 6 R1 R2\nSYSCALL 10 R1\nEXIT 0\n");
+
+            createDemoIfMissing.accept("pipe_demo.vexe", 
+                "LOAD R0 0\nSYSCALL 5 R0\nMOV R2 R0\nLOAD R1 1\nSYSCALL 6 R1 R2\nEXIT 0\n");
+
         } catch (Exception e) {
             System.err.println("Failed to create demo files: " + e.getMessage());
         }
@@ -124,6 +145,8 @@ public class BootLoader {
         syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_EXIT, new SysExitHandler());
         syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_GETPID, new SysGetPidHandler());
         syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_GETUID, new SysGetUidHandler());
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_OPEN, new com.rohith.javavirtualos.kernel.process.runtime.syscall.SysOpenHandler(fsManager));
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_CLOSE, new com.rohith.javavirtualos.kernel.process.runtime.syscall.SysCloseHandler());
 
         MultiCoreProcessor processor = new MultiCoreProcessor(4);
         List<Scheduler> schedulers = new ArrayList<>();

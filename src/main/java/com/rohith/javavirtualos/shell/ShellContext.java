@@ -15,6 +15,7 @@ public class ShellContext {
     private String currentDirectory;
     private final PrintStream out;
     private final InputStream in;
+    private final java.util.Map<String, String> aliases;
 
     public ShellContext(SystemContext systemContext, User initialUser, PrintStream out, InputStream in) {
         this.systemContext = systemContext;
@@ -22,6 +23,11 @@ public class ShellContext {
         this.currentDirectory = "/";
         this.out = out;
         this.in = in;
+        this.aliases = new java.util.HashMap<>();
+    }
+
+    public java.util.Map<String, String> getAliases() {
+        return aliases;
     }
 
     public SystemContext getSystemContext() {

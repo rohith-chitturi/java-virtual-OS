@@ -20,6 +20,7 @@ public class SystemCallDispatcher {
     public static final int SYS_YIELD = 7;
     public static final int SYS_GETPID = 8;
     public static final int SYS_GETUID = 9;
+    public static final int SYS_CLOSE = 10;
 
     private final Map<Integer, SystemCallHandler> handlers = new HashMap<>();
 
