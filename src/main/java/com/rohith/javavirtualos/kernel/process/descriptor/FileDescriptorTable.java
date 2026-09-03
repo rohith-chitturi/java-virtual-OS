@@ -32,4 +32,8 @@ public class FileDescriptorTable {
         }
         return false;
     }
+
+    public Map<Integer, Descriptor> getAll() {
+        return new HashMap<>(descriptors);
+    }
 }

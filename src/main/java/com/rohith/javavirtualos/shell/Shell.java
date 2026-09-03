@@ -60,7 +60,7 @@ public class Shell {
         commandRegistry.register(new UseraddCommand(userManager));
         
         // Process Commands
-        commandRegistry.register(new PsCommand(processService));
+        commandRegistry.register(new PsCommand(fsService));
         commandRegistry.register(new PstreeCommand(processService));
         commandRegistry.register(new ThreadsCommand(processService));
         commandRegistry.register(new KillCommand(processService));
@@ -72,6 +72,11 @@ public class Shell {
         commandRegistry.register(new RunQueueCommand(processService));
         commandRegistry.register(new BenchmarkSchedulerCommand());
         commandRegistry.register(new VmMapCommand(processService));
+        commandRegistry.register(new TopCommand(fsService));
+        commandRegistry.register(new FreeCommand(fsService));
+        commandRegistry.register(new VmstatCommand(fsService));
+        commandRegistry.register(new IostatCommand(fsService));
+        commandRegistry.register(new DmesgCommand(fsService));
         
         // FS Commands
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.MkdirCommand(fsService));

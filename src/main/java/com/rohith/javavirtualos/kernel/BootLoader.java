@@ -74,6 +74,7 @@ public class BootLoader {
         System.out.println("[ OK ] Mounting Virtual File System");
         FileSystemManager fsManager = new FileSystemManager();
         fsManager.setSecurityManager(securityManager);
+        
         FileSystemService fsService = new DefaultFileSystemService(fsManager);
         eventBus.publish(new FileSystemMountedEvent("/"));
         
@@ -135,6 +136,27 @@ public class BootLoader {
         KernelMetrics metrics = new KernelMetrics();
         ProcessManager processManager = new ProcessManager(pidGenerator, eventBus, metrics, config, resourceManager);
         DefaultProcessService processService = new DefaultProcessService(processManager);
+
+        // Initialize Memory Manager (if not fully wired, we do it here for VFS)
+        com.rohith.javavirtualos.kernel.memory.MemorySize totalMemory = com.rohith.javavirtualos.kernel.memory.MemorySize.ofMB(1024);
+        com.rohith.javavirtualos.kernel.memory.MemorySize reservedMemory = com.rohith.javavirtualos.kernel.memory.MemorySize.ofMB(64);
+        com.rohith.javavirtualos.kernel.memory.strategy.AllocationStrategy memStrategy = new com.rohith.javavirtualos.kernel.memory.strategy.FirstFitStrategy();
+        com.rohith.javavirtualos.kernel.memory.MemoryManager memoryManager = new com.rohith.javavirtualos.kernel.memory.MemoryManager(totalMemory, reservedMemory, memStrategy, eventBus, new KernelTick());
+
+        // Mount Virtual Filesystems (v1.5)
+        com.rohith.javavirtualos.kernel.events.KernelLogBuffer logBuffer = new com.rohith.javavirtualos.kernel.events.KernelLogBuffer(1024, eventBus);
+        com.rohith.javavirtualos.kernel.filesystem.procfs.ProcFileSystem.mount(
+            fsManager, 
+            processManager, 
+            memoryManager, 
+            systemContext, 
+            logBuffer
+        );
+        com.rohith.javavirtualos.kernel.filesystem.procfs.SysFileSystem.mount(
+            fsManager, 
+            deviceManager, 
+            memoryManager
+        );
 
         SystemCallDispatcher syscallDispatcher = new SystemCallDispatcher(processManager, fsManager);
         syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_WRITE, new SysWriteHandler());
