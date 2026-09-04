@@ -43,7 +43,7 @@ public class VmMapCommand implements Command {
             sb.append("--------------------------------------------------------------------------------\n");
             
             for (VirtualMemoryArea vma : vmas) {
-                String backing = vma.getBackingFile() != null ? vma.getBackingFile().getName() : "[none]";
+                String backing = vma.getBackingFile() != null ? "inode:" + vma.getBackingFile().getInodeId() : "[none]";
                 sb.append(String.format("0x%-16x 0x%-16x %-6s %-10s %-12s %s\n", 
                     vma.getStartAddress().getAddress(), 
                     vma.getEndAddress().getAddress(), 

@@ -12,26 +12,25 @@ import java.util.function.Supplier;
  */
 public class VirtualDirectoryNode extends DirectoryNode {
 
-    private final Supplier<Collection<Inode>> dynamicChildrenSupplier;
+    private final Supplier<Collection<DirectoryEntry>> childrenSupplier;
 
-    public VirtualDirectoryNode(String name, String owner, DirectoryNode parent, Supplier<Collection<Inode>> dynamicChildrenSupplier) {
-        super(name, owner, parent);
-        this.dynamicChildrenSupplier = dynamicChildrenSupplier;
+    public VirtualDirectoryNode(String owner, Supplier<Collection<DirectoryEntry>> childrenSupplier) {
+        super(owner);
+        this.childrenSupplier = childrenSupplier;
     }
 
-    private Map<String, Inode> getMergedChildren() {
-        Map<String, Inode> merged = new HashMap<>();
+    private Map<String, DirectoryEntry> getMergedChildren() {
+        Map<String, DirectoryEntry> merged = new HashMap<>();
         // Add static children
-        for (Inode child : super.getChildren()) {
-            merged.put(child.getName(), child);
+        for (DirectoryEntry entry : super.getEntries()) {
+            merged.put(entry.getName(), entry);
         }
         // Add dynamic children
-        if (dynamicChildrenSupplier != null) {
-            Collection<Inode> dynamicChildren = dynamicChildrenSupplier.get();
+        if (childrenSupplier != null) {
+            Collection<DirectoryEntry> dynamicChildren = childrenSupplier.get();
             if (dynamicChildren != null) {
-                for (Inode child : dynamicChildren) {
-                    child.setParent(this);
-                    merged.put(child.getName(), child);
+                for (DirectoryEntry entry : dynamicChildren) {
+                    merged.put(entry.getName(), entry);
                 }
             }
         }
@@ -41,20 +40,31 @@ public class VirtualDirectoryNode extends DirectoryNode {
     @Override
     public long calculateSize() {
         long total = 0;
-        for (Inode child : getMergedChildren().values()) {
-            total += child.calculateSize();
+        for (DirectoryEntry entry : getMergedChildren().values()) {
+            total += entry.getInode().calculateSize();
         }
         return total;
     }
 
     @Override
     public Inode getChild(String name) {
+        DirectoryEntry entry = getMergedChildren().get(name);
+        return entry != null ? entry.getInode() : null;
+    }
+    
+    @Override
+    public DirectoryEntry getChildEntry(String name) {
         return getMergedChildren().get(name);
     }
 
     @Override
-    public Collection<Inode> getChildren() {
+    public Collection<DirectoryEntry> getEntries() {
         return getMergedChildren().values();
+    }
+
+    @Override
+    public Collection<Inode> getChildren() {
+        return getMergedChildren().values().stream().map(DirectoryEntry::getInode).toList();
     }
 
     @Override

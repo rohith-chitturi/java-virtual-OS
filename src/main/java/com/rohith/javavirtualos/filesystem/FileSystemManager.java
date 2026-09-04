@@ -25,7 +25,7 @@ public class FileSystemManager {
     private SecurityManager securityManager;
 
     public FileSystemManager() {
-        this.root = new DirectoryNode("", "root", null);
+        this.root = new DirectoryNode("root");
         this.pathResolver = new PathResolver(this.root);
         this.validator = new FileSystemValidator();
         this.eventBus = null; // Stub until Events module is fully built
@@ -62,11 +62,8 @@ public class FileSystemManager {
         String name = pathResolver.extractName(path);
         validator.validateCreation(parent, name, currentUser);
 
-        DirectoryNode newDir = new DirectoryNode(name, currentUser.getUsername(), parent);
-        parent.addChild(newDir);
-        
-        // Emitting event (when EventBus is ready)
-        // eventBus.publish(new FileSystemEvent("DIRECTORY_CREATED", newDir.getAbsolutePath()));
+        DirectoryNode newDir = new DirectoryNode(currentUser.getUsername());
+        parent.addChild(name, newDir);
     }
 
     public void createFile(String path, DirectoryNode currentDir, User currentUser) throws FileSystemException {
@@ -76,12 +73,16 @@ public class FileSystemManager {
         String name = pathResolver.extractName(path);
         validator.validateCreation(parent, name, currentUser);
 
-        FileNode newFile = new FileNode(name, currentUser.getUsername(), parent);
-        parent.addChild(newFile);
+        FileNode newFile = new FileNode(currentUser.getUsername());
+        parent.addChild(name, newFile);
     }
 
-    public void remove(String path, DirectoryNode currentDir, boolean isDirectoryCommand, User currentUser) throws FileSystemException {
-        Inode target = pathResolver.resolvePath(path, currentDir);
+    public void remove(String path, DirectoryNode currentDir, String currentActivePath, boolean isDirectoryCommand, User currentUser) throws FileSystemException {
+        DirectoryNode parent = pathResolver.resolveParentDirectory(path, currentDir);
+        if (parent == null) throw new FileNotFoundException("Parent directory does not exist");
+        String name = pathResolver.extractName(path);
+        Inode target = parent.getChild(name);
+        
         if (target == null) throw new FileNotFoundException(path);
 
         if (isDirectoryCommand && !(target instanceof DirectoryNode)) {
@@ -96,12 +97,14 @@ public class FileSystemManager {
 
         DirectoryNode targetDir = target instanceof DirectoryNode ? (DirectoryNode) target : null;
         if (targetDir != null) {
-            validator.validateDeletion(targetDir, currentDir, currentUser);
+            // resolve absolute path of target for string matching
+            String absoluteTarget = path.startsWith("/") ? path : (currentActivePath.equals("/") ? "/" + path : currentActivePath + "/" + path);
+            validator.validateDeletion(targetDir, parent, absoluteTarget, currentActivePath, currentUser);
         } else {
             validator.validateWrite(target, currentUser);
         }
 
-        target.getParent().removeChild(target.getName());
+        parent.removeChild(name);
     }
     public void validateReadAccess(Inode target, User currentUser) throws FileSystemException {
         validator.validateRead(target, currentUser);
@@ -117,6 +120,7 @@ public class FileSystemManager {
     
     public void mountDevice(String path, DeviceNode deviceNode) throws FileSystemException {
         DirectoryNode parent = pathResolver.resolveParentDirectory(path, root);
+        String name = pathResolver.extractName(path);
         if (parent == null) {
             String parentStr = path.substring(0, path.lastIndexOf('/'));
             if (parentStr.isEmpty()) parentStr = "/";
@@ -125,13 +129,13 @@ public class FileSystemManager {
                 try {
                     parent = resolveDirectory("/dev", root);
                 } catch (Exception e) {
-                    parent = new DirectoryNode("dev", "root", root);
-                    root.addChild(parent);
+                    parent = new DirectoryNode("root");
+                    root.addChild("dev", parent);
                 }
             } else {
                 throw new FileNotFoundException("Parent directory does not exist for mount: " + path);
             }
         }
-        parent.addChild(deviceNode);
+        parent.addChild(name, deviceNode);
     }
 }

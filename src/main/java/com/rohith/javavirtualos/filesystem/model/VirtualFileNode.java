@@ -11,8 +11,8 @@ public class VirtualFileNode extends FileNode {
 
     private final Supplier<String> contentGenerator;
 
-    public VirtualFileNode(String name, String owner, DirectoryNode parent, Supplier<String> contentGenerator) {
-        super(name, owner, parent);
+    public VirtualFileNode(String owner, Supplier<String> contentGenerator) {
+        super(owner);
         this.contentGenerator = contentGenerator;
     }
 

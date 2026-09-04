@@ -34,14 +34,14 @@ public class FileSystemManagerTest {
     @Test
     public void testRemoveFile() {
         manager.createFile("notes.txt", manager.getRoot(), testUser);
-        manager.remove("notes.txt", manager.getRoot(), false, testUser);
+        manager.remove("notes.txt", manager.getRoot(), "/", false, testUser);
         assertNull(manager.resolvePath("/notes.txt", manager.getRoot()));
     }
 
     @Test
     public void testRemoveDirectory() {
         manager.createDirectory("docs", manager.getRoot(), testUser);
-        manager.remove("docs", manager.getRoot(), true, testUser);
+        manager.remove("docs", manager.getRoot(), "/", true, testUser);
         assertNull(manager.resolvePath("/docs", manager.getRoot()));
     }
 
@@ -51,6 +51,6 @@ public class FileSystemManagerTest {
         DirectoryNode docs = (DirectoryNode) manager.resolvePath("docs", manager.getRoot());
         manager.createFile("file.txt", docs, testUser);
         
-        assertThrows(FileSystemException.class, () -> manager.remove("docs", manager.getRoot(), true, testUser));
+        assertThrows(FileSystemException.class, () -> manager.remove("docs", manager.getRoot(), "/", true, testUser));
     }
 }

@@ -3,6 +3,7 @@ package com.rohith.javavirtualos.services;
 import com.rohith.javavirtualos.command.CommandResult;
 import com.rohith.javavirtualos.exceptions.FileSystemException;
 import com.rohith.javavirtualos.filesystem.FileSystemManager;
+import com.rohith.javavirtualos.filesystem.model.DirectoryEntry;
 import com.rohith.javavirtualos.filesystem.model.DirectoryNode;
 import com.rohith.javavirtualos.filesystem.model.FileNode;
 import com.rohith.javavirtualos.filesystem.model.Inode;
@@ -28,10 +29,10 @@ public class DefaultFileSystemService implements FileSystemService {
             DirectoryNode targetDir = path == null ? currentDir : manager.resolveDirectory(path, currentDir);
             
             StringBuilder sb = new StringBuilder();
-            Collection<Inode> children = targetDir.getChildren();
-            for (Inode child : children) {
-                String type = child instanceof DirectoryNode ? "[DIR] " : "[FILE]";
-                sb.append(String.format("%-7s %s%n", type, child.getName()));
+            Collection<DirectoryEntry> entries = targetDir.getEntries();
+            for (DirectoryEntry entry : entries) {
+                String type = entry.getInode() instanceof DirectoryNode ? "[DIR] " : "[FILE]";
+                sb.append(String.format("%-7s %s%n", type, entry.getName()));
             }
             return CommandResult.success(sb.toString().trim());
         } catch (FileSystemException e) {
@@ -54,7 +55,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult removeDirectory(String path, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            manager.remove(path, currentDir, true, context.getCurrentUser());
+            manager.remove(path, currentDir, context.getCurrentDirectory(), true, context.getCurrentUser());
             return CommandResult.success();
         } catch (FileSystemException e) {
             return CommandResult.failure(e.getMessage());
@@ -65,7 +66,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult removeFile(String path, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            manager.remove(path, currentDir, false, context.getCurrentUser());
+            manager.remove(path, currentDir, context.getCurrentDirectory(), false, context.getCurrentUser());
             return CommandResult.success();
         } catch (FileSystemException e) {
             return CommandResult.failure(e.getMessage());
@@ -77,7 +78,25 @@ public class DefaultFileSystemService implements FileSystemService {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
             DirectoryNode targetDir = manager.resolveDirectory(path, currentDir);
-            context.setCurrentDirectory(targetDir.getAbsolutePath());
+            // Need absolute path. We can construct it by resolving parts or simple string manipulation.
+            String newPath;
+            if (path.startsWith("/")) {
+                newPath = path;
+            } else if (path.equals("..")) {
+                String c = context.getCurrentDirectory();
+                if (c.equals("/")) newPath = "/";
+                else {
+                    int last = c.lastIndexOf('/');
+                    newPath = last <= 0 ? "/" : c.substring(0, last);
+                }
+            } else if (path.equals(".")) {
+                newPath = context.getCurrentDirectory();
+            } else {
+                String c = context.getCurrentDirectory();
+                newPath = c.equals("/") ? "/" + path : c + "/" + path;
+            }
+            // A proper path normalization could be done here, but this is a placeholder.
+            context.setCurrentDirectory(newPath);
             return CommandResult.success();
         } catch (FileSystemException e) {
             return CommandResult.failure(e.getMessage());
@@ -101,21 +120,25 @@ public class DefaultFileSystemService implements FileSystemService {
             DirectoryNode currentDir = getCurrentDir(context);
             DirectoryNode targetDir = path == null ? currentDir : manager.resolveDirectory(path, currentDir);
             StringBuilder sb = new StringBuilder();
-            buildTree(targetDir, 0, sb);
+            String rootName = path == null ? context.getCurrentDirectory() : path;
+            int lastSlash = rootName.lastIndexOf('/');
+            String baseName = lastSlash == -1 ? rootName : rootName.substring(lastSlash + 1);
+            if (baseName.isEmpty()) baseName = "/";
+            buildTree(targetDir, baseName, 0, sb);
             return CommandResult.success(sb.toString().trim());
         } catch (FileSystemException e) {
             return CommandResult.failure(e.getMessage());
         }
     }
 
-    private void buildTree(DirectoryNode dir, int depth, StringBuilder sb) {
+    private void buildTree(DirectoryNode dir, String name, int depth, StringBuilder sb) {
         String indent = "  ".repeat(depth);
-        sb.append(indent).append(dir.getName().isEmpty() ? "/" : dir.getName()).append("\n");
-        for (Inode child : dir.getChildren()) {
-            if (child instanceof DirectoryNode) {
-                buildTree((DirectoryNode) child, depth + 1, sb);
+        sb.append(indent).append(name.isEmpty() ? "/" : name).append("\n");
+        for (DirectoryEntry entry : dir.getEntries()) {
+            if (entry.getInode() instanceof DirectoryNode) {
+                buildTree((DirectoryNode) entry.getInode(), entry.getName(), depth + 1, sb);
             } else {
-                sb.append(indent).append("  ").append(child.getName()).append("\n");
+                sb.append(indent).append("  ").append(entry.getName()).append("\n");
             }
         }
     }
@@ -184,26 +207,30 @@ public class DefaultFileSystemService implements FileSystemService {
             return CommandResult.failure(e.getMessage());
         }
     }
+
     @Override
     public CommandResult findFile(String path, String pattern, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
             DirectoryNode targetDir = path == null ? currentDir : manager.resolveDirectory(path, currentDir);
             StringBuilder sb = new StringBuilder();
-            findRecursive(targetDir, pattern, sb);
+            String rootPath = path == null ? context.getCurrentDirectory() : (path.startsWith("/") ? path : context.getCurrentDirectory() + "/" + path);
+            findRecursive(targetDir, rootPath, pattern, sb);
             return CommandResult.success(sb.toString().trim());
         } catch (FileSystemException e) {
             return CommandResult.failure(e.getMessage());
         }
     }
 
-    private void findRecursive(DirectoryNode dir, String pattern, StringBuilder sb) {
-        for (Inode child : dir.getChildren()) {
-            if (child.getName().contains(pattern)) {
-                sb.append(child.getAbsolutePath()).append("\n");
+    private void findRecursive(DirectoryNode dir, String currentPath, String pattern, StringBuilder sb) {
+        for (DirectoryEntry entry : dir.getEntries()) {
+            if (entry.getName().contains(pattern)) {
+                String fullPath = currentPath.equals("/") ? "/" + entry.getName() : currentPath + "/" + entry.getName();
+                sb.append(fullPath).append("\n");
             }
-            if (child instanceof DirectoryNode) {
-                findRecursive((DirectoryNode) child, pattern, sb);
+            if (entry.getInode() instanceof DirectoryNode) {
+                String nextPath = currentPath.equals("/") ? "/" + entry.getName() : currentPath + "/" + entry.getName();
+                findRecursive((DirectoryNode) entry.getInode(), nextPath, pattern, sb);
             }
         }
     }

@@ -7,12 +7,12 @@ import com.rohith.javavirtualos.kernel.device.DeviceState;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-public class DeviceNode extends FileNode {
+public class DeviceNode extends Inode {
     private final DeviceDriver driver;
     private final DeviceManager deviceManager;
 
-    public DeviceNode(DeviceDriver driver, DeviceManager deviceManager, DirectoryNode parent) {
-        super(driver.getDescriptor().getName(), "root", parent);
+    public DeviceNode(String owner, DeviceDriver driver, DeviceManager deviceManager) {
+        super(owner);
         this.driver = driver;
         this.deviceManager = deviceManager;
     }
@@ -31,6 +31,10 @@ public class DeviceNode extends FileNode {
     }
 
     @Override
+    public FileType getType() {
+        return FileType.DEVICE;
+    }
+
     public String getContent() {
         if (!checkHealth()) return "";
         try {
@@ -43,7 +47,6 @@ public class DeviceNode extends FileNode {
         }
     }
 
-    @Override
     public void setContent(String content) {
         if (!checkHealth()) return;
         try {
@@ -55,7 +58,6 @@ public class DeviceNode extends FileNode {
         }
     }
     
-    @Override
     public void appendContent(String additional) {
         setContent(additional);
     }
