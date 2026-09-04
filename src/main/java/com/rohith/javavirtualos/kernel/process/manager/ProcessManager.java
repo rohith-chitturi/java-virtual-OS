@@ -215,6 +215,10 @@ public class ProcessManager {
     
     private void cleanupResources(ProcessControlBlock pcb) {
         pcb.setEndTime(System.currentTimeMillis());
+        // Close any remaining open file descriptors to release openReferenceCounts
+        for (Integer fd : new java.util.ArrayList<>(pcb.getFileDescriptorTable().getAll().keySet())) {
+            pcb.getFileDescriptorTable().close(fd);
+        }
         resourceManager.deallocateMemory(pcb);
         metrics.decrementRunningProcesses();
     }

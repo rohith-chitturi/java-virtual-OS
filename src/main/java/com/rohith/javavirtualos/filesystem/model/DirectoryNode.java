@@ -33,14 +33,12 @@ public class DirectoryNode extends Inode {
     public void addChild(String name, Inode child) {
         DirectoryEntry entry = new DirectoryEntry(name, child);
         children.put(name, entry);
-        child.incrementLinkCount();
         metadata.updateModified();
     }
 
     public void removeChild(String name) {
         DirectoryEntry entry = children.remove(name);
         if (entry != null) {
-            entry.getInode().decrementLinkCount();
             metadata.updateModified();
         }
     }

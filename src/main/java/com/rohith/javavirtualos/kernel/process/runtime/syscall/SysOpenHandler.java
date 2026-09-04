@@ -48,7 +48,8 @@ public class SysOpenHandler implements SystemCallHandler {
                 fsManager.validateWriteAccess(node, pcb.getOwner());
             }
             
-            OpenFile openFile = new OpenFile(node);
+            OpenFile openFile = new OpenFile(node, fsManager.getLifecycleManager());
+            fsManager.getLifecycleManager().incrementOpenReference(node);
             int fd = pcb.getFileDescriptorTable().allocate(openFile);
             return SystemCallResult.success(fd);
             
