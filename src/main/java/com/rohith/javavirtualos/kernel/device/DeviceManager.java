@@ -34,7 +34,7 @@ public class DeviceManager {
             // Mount the device in VFS
             String mountPath = "/dev/" + driver.getDescriptor().getName();
             driver.getDescriptor().setMountPath(mountPath);
-            DeviceNode deviceNode = new DeviceNode(driver, this, null);
+            DeviceNode deviceNode = new DeviceNode("root", driver, this);
             fileSystemManager.mountDevice(mountPath, deviceNode);
             eventBus.publish(new DeviceMountedEvent(driver.getDescriptor()));
             

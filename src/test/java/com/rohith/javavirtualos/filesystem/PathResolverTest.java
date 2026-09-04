@@ -15,12 +15,12 @@ public class PathResolverTest {
 
     @BeforeEach
     public void setUp() {
-        root = new DirectoryNode("", "root", null);
-        home = new DirectoryNode("home", "root", root);
-        user = new DirectoryNode("javavm", "user", home);
+        root = new DirectoryNode("root");
+        home = new DirectoryNode("root");
+        user = new DirectoryNode("user");
         
-        root.addChild(home);
-        home.addChild(user);
+        root.addChild("home", home);
+        home.addChild("javavm", user);
         
         resolver = new PathResolver(root);
     }
@@ -33,10 +33,10 @@ public class PathResolverTest {
 
     @Test
     public void testResolveParent() {
-        Inode node = resolver.resolvePath("..", user);
+        Inode node = resolver.resolvePath("/home/javavm/..", root);
         assertEquals(home, node);
         
-        Inode rootNode = resolver.resolvePath("../..", user);
+        Inode rootNode = resolver.resolvePath("/home/javavm/../..", root);
         assertEquals(root, rootNode);
     }
 

@@ -6,5 +6,6 @@ package com.rohith.javavirtualos.filesystem.model;
 public enum FileType {
     FILE,
     DIRECTORY,
-    LINK
+    LINK,
+    DEVICE
 }

@@ -12,15 +12,15 @@ public class DirectoryTest {
 
     @BeforeEach
     public void setUp() {
-        root = new DirectoryNode("", "root", null);
-        usr = new DirectoryNode("usr", "root", root);
-        textFile = new FileNode("hello.txt", "root", root);
+        root = new DirectoryNode("root");
+        usr = new DirectoryNode("root");
+        textFile = new FileNode("root");
     }
 
     @Test
     public void testAddAndRemoveChild() {
-        root.addChild(usr);
-        root.addChild(textFile);
+        root.addChild("usr", usr);
+        root.addChild("hello.txt", textFile);
         
         assertTrue(root.hasChild("usr"));
         assertTrue(root.hasChild("hello.txt"));
@@ -31,22 +31,11 @@ public class DirectoryTest {
 
     @Test
     public void testCalculateSize() {
-        root.addChild(usr);
-        root.addChild(textFile);
+        root.addChild("usr", usr);
+        root.addChild("hello.txt", textFile);
         
         textFile.setContent("hello world");
         
         assertEquals(11, root.calculateSize());
-    }
-
-    @Test
-    public void testAbsolutePath() {
-        root.addChild(usr);
-        DirectoryNode bin = new DirectoryNode("bin", "root", usr);
-        usr.addChild(bin);
-        
-        assertEquals("/", root.getAbsolutePath());
-        assertEquals("/usr", usr.getAbsolutePath());
-        assertEquals("/usr/bin", bin.getAbsolutePath());
     }
 }

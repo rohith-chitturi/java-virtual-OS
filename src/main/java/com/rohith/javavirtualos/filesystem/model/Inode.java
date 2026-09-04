@@ -1,50 +1,72 @@
 package com.rohith.javavirtualos.filesystem.model;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
- * Abstract base class for any element in the virtual file system (Composite Pattern Component).
+ * Abstract base class for any element in the virtual file system.
+ * It is decoupled from the tree structure (no parent, no name).
  */
 public abstract class Inode {
     
-    protected final FileMetadata metadata;
-    protected DirectoryNode parent;
+    private static final AtomicLong ID_GENERATOR = new AtomicLong(1);
 
-    public Inode(String name, String owner, DirectoryNode parent) {
-        this.metadata = new FileMetadata(name, owner);
-        this.parent = parent;
+    protected final long inodeId;
+    protected final FileMetadata metadata;
+    protected int linkCount;
+    protected int openReferenceCount;
+
+    public Inode(String owner) {
+        this.inodeId = ID_GENERATOR.getAndIncrement();
+        this.metadata = new FileMetadata(owner);
+        this.linkCount = 0;
+        this.openReferenceCount = 0;
+    }
+
+    public Inode(long inodeId, String owner) {
+        this.inodeId = inodeId;
+        this.metadata = new FileMetadata(owner);
+        this.linkCount = 0;
+        this.openReferenceCount = 0;
+    }
+
+    public long getInodeId() {
+        return inodeId;
     }
 
     public FileMetadata getMetadata() {
         return metadata;
     }
 
-    public DirectoryNode getParent() {
-        return parent;
+    public int getLinkCount() {
+        return linkCount;
     }
 
-    public void setParent(DirectoryNode parent) {
-        this.parent = parent;
+    public void incrementLinkCount() {
+        this.linkCount++;
     }
 
-    public String getName() {
-        return metadata.getName();
-    }
-    
-    public void setName(String name) {
-        metadata.setName(name);
-    }
-
-    /**
-     * Absolute path construction.
-     */
-    public String getAbsolutePath() {
-        if (parent == null) {
-            return "/"; // Root directory
+    public void decrementLinkCount() {
+        if (this.linkCount > 0) {
+            this.linkCount--;
         }
-        String parentPath = parent.getAbsolutePath();
-        if (parentPath.equals("/")) {
-            return "/" + getName();
+    }
+
+    public int getOpenReferenceCount() {
+        return openReferenceCount;
+    }
+
+    public void incrementOpenReferenceCount() {
+        this.openReferenceCount++;
+    }
+
+    public void decrementOpenReferenceCount() {
+        if (this.openReferenceCount > 0) {
+            this.openReferenceCount--;
         }
-        return parentPath + "/" + getName();
+    }
+
+    public boolean canBeReclaimed() {
+        return linkCount == 0 && openReferenceCount == 0;
     }
 
     /**

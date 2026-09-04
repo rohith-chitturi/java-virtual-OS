@@ -46,27 +46,19 @@ public class FileSystemValidator {
         }
     }
 
-    public void validateDeletion(DirectoryNode target, DirectoryNode currentActiveDir, User currentUser) throws FileSystemException {
-        if (securityManager != null && !securityManager.canWrite(currentUser, target.getParent())) {
+    public void validateDeletion(DirectoryNode targetDir, DirectoryNode parentDir, String targetPath, String currentActivePath, User currentUser) throws FileSystemException {
+        if (securityManager != null && !securityManager.canWrite(currentUser, parentDir)) {
             throw new FileSystemException("Permission denied");
         }
-        if (target.getParent() == null) {
+        if (targetPath.equals("/")) {
             throw new FileSystemException("Cannot delete the root directory");
         }
-        if (isAncestorOrSelf(target, currentActiveDir)) {
+        // Very basic ancestor check using path strings
+        String normalizedTarget = targetPath.endsWith("/") ? targetPath : targetPath + "/";
+        String normalizedCurrent = currentActivePath.endsWith("/") ? currentActivePath : currentActivePath + "/";
+        if (normalizedCurrent.startsWith(normalizedTarget)) {
             throw new FileSystemException("Cannot delete the current active directory or its ancestors");
         }
-    }
-
-    private boolean isAncestorOrSelf(DirectoryNode target, DirectoryNode current) {
-        DirectoryNode check = current;
-        while (check != null) {
-            if (check == target) {
-                return true;
-            }
-            check = check.getParent();
-        }
-        return false;
     }
 
     public void validateRead(Inode target, User currentUser) throws FileSystemException {

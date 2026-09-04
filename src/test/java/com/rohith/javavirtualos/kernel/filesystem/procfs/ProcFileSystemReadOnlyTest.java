@@ -8,9 +8,9 @@ public class ProcFileSystemReadOnlyTest {
 
     @Test
     public void testProcFilesAreReadOnly() {
-        VirtualFileNode meminfo = new VirtualFileNode("meminfo", "root", null, () -> "data");
-        VirtualFileNode uptime = new VirtualFileNode("uptime", "root", null, () -> "data");
-        VirtualFileNode status = new VirtualFileNode("status", "root", null, () -> "data");
+        VirtualFileNode meminfo = new VirtualFileNode("root", () -> "data");
+        VirtualFileNode uptime = new VirtualFileNode("root", () -> "data");
+        VirtualFileNode status = new VirtualFileNode("root", () -> "data");
 
         assertThrows(UnsupportedOperationException.class, () -> meminfo.setContent("new"));
         assertThrows(UnsupportedOperationException.class, () -> uptime.setContent("new"));

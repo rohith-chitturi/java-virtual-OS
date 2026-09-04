@@ -41,11 +41,11 @@ class DeviceDriverTest {
     @Test
     void testDescriptorLifecycle() throws Exception {
         NullDevice dev = new NullDevice();
-        com.rohith.javavirtualos.filesystem.model.DirectoryNode root = new com.rohith.javavirtualos.filesystem.model.DirectoryNode("root", "root", null);
+        com.rohith.javavirtualos.filesystem.model.DirectoryNode root = new com.rohith.javavirtualos.filesystem.model.DirectoryNode("root");
         com.rohith.javavirtualos.filesystem.model.DeviceNode node = new com.rohith.javavirtualos.filesystem.model.DeviceNode(
+            "root",
             dev, 
-            new DeviceManager(new com.rohith.javavirtualos.kernel.events.KernelEventBus(), new com.rohith.javavirtualos.filesystem.FileSystemManager()), 
-            root
+            new DeviceManager(new com.rohith.javavirtualos.kernel.events.KernelEventBus(), new com.rohith.javavirtualos.filesystem.FileSystemManager())
         );
         
         com.rohith.javavirtualos.kernel.process.descriptor.OpenDevice openDevice = new com.rohith.javavirtualos.kernel.process.descriptor.OpenDevice(node);

@@ -2,7 +2,7 @@ package com.rohith.javavirtualos.kernel.filesystem.procfs;
 
 import com.rohith.javavirtualos.filesystem.FileSystemManager;
 import com.rohith.javavirtualos.filesystem.model.DirectoryNode;
-import com.rohith.javavirtualos.filesystem.model.Inode;
+import com.rohith.javavirtualos.filesystem.model.DirectoryEntry;
 import com.rohith.javavirtualos.filesystem.model.VirtualDirectoryNode;
 import com.rohith.javavirtualos.filesystem.model.VirtualFileNode;
 import com.rohith.javavirtualos.kernel.SystemContext;
@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public class ProcFileSystem {
 
@@ -27,45 +26,44 @@ public class ProcFileSystem {
             DirectoryNode root = fsManager.getRoot();
             
             // Define /proc as a VirtualDirectoryNode with dynamic PID children
-            VirtualDirectoryNode procDir = new VirtualDirectoryNode("proc", "root", root, () -> {
-                List<Inode> dynamicProcs = new ArrayList<>();
+            VirtualDirectoryNode procDir = new VirtualDirectoryNode("root", () -> {
+                List<DirectoryEntry> dynamicProcs = new ArrayList<>();
                 for (ProcessControlBlock pcb : processManager.listProcesses()) {
+                    String pidName = String.valueOf(pcb.getPid());
                     VirtualDirectoryNode pidDir = createPidDirectory(pcb, processManager);
-                    dynamicProcs.add(pidDir);
+                    dynamicProcs.add(new DirectoryEntry(pidName, pidDir));
                 }
                 return dynamicProcs;
             });
             
-            root.addChild(procDir);
+            root.addChild("proc", procDir);
 
             // Add static virtual files
-            procDir.addChild(new VirtualFileNode("cpuinfo", "root", procDir, () -> {
+            procDir.addChild("cpuinfo", new VirtualFileNode("root", () -> {
                 StringBuilder sb = new StringBuilder();
-                // Simple representation for now. A real OS might have more complex CPU info.
                 sb.append("processor : 0\n");
-                sb.append("state     : RUNNING\n"); // Placeholder, ideally from Scheduler/CPU
+                sb.append("state     : RUNNING\n"); 
                 sb.append("scheduler : CFS\n");
                 return sb.toString();
             }));
 
-            procDir.addChild(new VirtualFileNode("meminfo", "root", procDir, () -> {
+            procDir.addChild("meminfo", new VirtualFileNode("root", () -> {
                 long total = memoryManager.getStatistics().getTotalMemory().toBytes();
                 long used = memoryManager.getStatistics().getUsedMemory().toBytes();
                 long free = total - used;
                 return String.format("MemTotal: %8d kB\nMemFree:  %8d kB\n", total / 1024, free / 1024);
             }));
 
-            procDir.addChild(new VirtualFileNode("uptime", "root", procDir, () -> {
+            procDir.addChild("uptime", new VirtualFileNode("root", () -> {
                 long uptime = System.currentTimeMillis() - context.getBootTime();
                 return String.format("%.2f 0.00\n", uptime / 1000.0);
             }));
 
-            procDir.addChild(new VirtualFileNode("mounts", "root", procDir, () -> {
-                // Static representation for now
+            procDir.addChild("mounts", new VirtualFileNode("root", () -> {
                 return "rootfs / rootfs rw 0 0\nproc /proc proc rw 0 0\nsysfs /sys sysfs rw 0 0\n";
             }));
 
-            procDir.addChild(new VirtualFileNode("kmsg", "root", procDir, () -> {
+            procDir.addChild("kmsg", new VirtualFileNode("root", () -> {
                 return logBuffer.getContents();
             }));
             
@@ -75,10 +73,9 @@ public class ProcFileSystem {
     }
 
     private static VirtualDirectoryNode createPidDirectory(ProcessControlBlock pcb, ProcessManager processManager) {
-        // Parent will be set when returned list is evaluated, so we can pass null for now
-        VirtualDirectoryNode pidDir = new VirtualDirectoryNode(String.valueOf(pcb.getPid()), pcb.getOwner().getUsername(), null, null);
+        VirtualDirectoryNode pidDir = new VirtualDirectoryNode(pcb.getOwner().getUsername(), null);
         
-        pidDir.addChild(new VirtualFileNode("status", pcb.getOwner().getUsername(), pidDir, () -> {
+        pidDir.addChild("status", new VirtualFileNode(pcb.getOwner().getUsername(), () -> {
             StringBuilder sb = new StringBuilder();
             sb.append("Name:       ").append(pcb.getCommandName()).append("\n");
             sb.append("PID:        ").append(pcb.getPid()).append("\n");
@@ -90,12 +87,12 @@ public class ProcFileSystem {
             return sb.toString();
         }));
         
-        pidDir.addChild(new VirtualFileNode("stat", pcb.getOwner().getUsername(), pidDir, () -> {
+        pidDir.addChild("stat", new VirtualFileNode(pcb.getOwner().getUsername(), () -> {
             return String.format("%d (%s) %s %d %d", pcb.getPid(), pcb.getCommandName(), 
                 pcb.getState().name().substring(0, 1), pcb.getParentPid(), pcb.getPgid());
         }));
         
-        pidDir.addChild(new VirtualFileNode("maps", pcb.getOwner().getUsername(), pidDir, () -> {
+        pidDir.addChild("maps", new VirtualFileNode(pcb.getOwner().getUsername(), () -> {
             StringBuilder sb = new StringBuilder();
             if (pcb.getVmas() != null) {
                 for (var vma : pcb.getVmas()) {
@@ -105,27 +102,31 @@ public class ProcFileSystem {
             return sb.toString();
         }));
 
-        VirtualDirectoryNode fdDir = new VirtualDirectoryNode("fd", pcb.getOwner().getUsername(), pidDir, () -> {
-            List<Inode> fds = new ArrayList<>();
+        VirtualDirectoryNode fdDir = new VirtualDirectoryNode(pcb.getOwner().getUsername(), () -> {
+            List<DirectoryEntry> fds = new ArrayList<>();
             Map<Integer, Descriptor> table = pcb.getFileDescriptorTable().getAll();
             for (Map.Entry<Integer, Descriptor> entry : table.entrySet()) {
                 if (entry.getValue() != null) {
                     int fdNum = entry.getKey();
                     Descriptor desc = entry.getValue();
-                    fds.add(new VirtualFileNode(String.valueOf(fdNum), pcb.getOwner().getUsername(), null, () -> {
+                    String fdName = String.valueOf(fdNum);
+                    VirtualFileNode fdNode = new VirtualFileNode(pcb.getOwner().getUsername(), () -> {
                         if (desc instanceof OpenFile) {
                             OpenFile of = (OpenFile) desc;
-                            return "fd=" + fdNum + "\npath=" + of.getFile().getAbsolutePath() + "\nmode=READ_WRITE\ntype=FILE\n";
+                            // getAbsolutePath is gone from Inode. We'll use a placeholder for now.
+                            // In a real implementation we'd need to reconstruct the path via PathResolver.
+                            return "fd=" + fdNum + "\npath=[deleted]\nmode=READ_WRITE\ntype=FILE\n";
                         } else if (desc instanceof StreamDescriptor) {
                             return "fd=" + fdNum + "\npath=pipe/stream\ntype=STREAM\n";
                         }
                         return "fd=" + fdNum + "\n";
-                    }));
+                    });
+                    fds.add(new DirectoryEntry(fdName, fdNode));
                 }
             }
             return fds;
         });
-        pidDir.addChild(fdDir);
+        pidDir.addChild("fd", fdDir);
 
         return pidDir;
     }

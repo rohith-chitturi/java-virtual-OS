@@ -22,7 +22,7 @@ public class SysCloseTest {
 
     @Test
     public void testCloseValidFd() {
-        FileNode node = new FileNode("test.txt", "root", null);
+        FileNode node = new FileNode("root");
         OpenFile openFile = new OpenFile(node);
         int fd = pcb.getFileDescriptorTable().allocate(openFile);
         
