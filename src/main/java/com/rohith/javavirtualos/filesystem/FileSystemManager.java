@@ -18,6 +18,7 @@ public class FileSystemManager {
     private final DirectoryNode root;
     private final PathResolver pathResolver;
     private final FileSystemValidator validator;
+    private final InodeLifecycleManager lifecycleManager;
     @SuppressWarnings("unused")
     private final EventBus eventBus;
     
@@ -28,7 +29,13 @@ public class FileSystemManager {
         this.root = new DirectoryNode("root");
         this.pathResolver = new PathResolver(this.root);
         this.validator = new FileSystemValidator();
+        this.lifecycleManager = new InodeLifecycleManager();
+        this.lifecycleManager.incrementLinkCount(this.root);
         this.eventBus = null; // Stub until Events module is fully built
+    }
+
+    public InodeLifecycleManager getLifecycleManager() {
+        return lifecycleManager;
     }
 
     public void setSecurityManager(SecurityManager securityManager) {
@@ -64,6 +71,7 @@ public class FileSystemManager {
 
         DirectoryNode newDir = new DirectoryNode(currentUser.getUsername());
         parent.addChild(name, newDir);
+        lifecycleManager.incrementLinkCount(newDir);
     }
 
     public void createFile(String path, DirectoryNode currentDir, User currentUser) throws FileSystemException {
@@ -75,6 +83,25 @@ public class FileSystemManager {
 
         FileNode newFile = new FileNode(currentUser.getUsername());
         parent.addChild(name, newFile);
+        lifecycleManager.incrementLinkCount(newFile);
+    }
+
+    public void createHardLink(String existingPath, String newPath, DirectoryNode currentDir, User currentUser) throws FileSystemException {
+        Inode target = pathResolver.resolvePath(existingPath, currentDir);
+        if (target == null) throw new FileNotFoundException(existingPath);
+        
+        if (target.getType() == com.rohith.javavirtualos.filesystem.model.FileType.DIRECTORY) {
+            throw new FileSystemException("Hard links not allowed for directories");
+        }
+
+        DirectoryNode parent = pathResolver.resolveParentDirectory(newPath, currentDir);
+        if (parent == null) throw new FileNotFoundException("Parent directory does not exist for new link");
+        
+        String linkName = pathResolver.extractName(newPath);
+        validator.validateCreation(parent, linkName, currentUser);
+
+        parent.addChild(linkName, target);
+        lifecycleManager.incrementLinkCount(target);
     }
 
     public void remove(String path, DirectoryNode currentDir, String currentActivePath, boolean isDirectoryCommand, User currentUser) throws FileSystemException {
@@ -105,6 +132,7 @@ public class FileSystemManager {
         }
 
         parent.removeChild(name);
+        lifecycleManager.decrementLinkCount(target);
     }
     public void validateReadAccess(Inode target, User currentUser) throws FileSystemException {
         validator.validateRead(target, currentUser);
@@ -137,5 +165,6 @@ public class FileSystemManager {
             }
         }
         parent.addChild(name, deviceNode);
+        lifecycleManager.incrementLinkCount(deviceNode);
     }
 }

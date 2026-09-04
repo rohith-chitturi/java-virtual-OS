@@ -234,4 +234,15 @@ public class DefaultFileSystemService implements FileSystemService {
             }
         }
     }
+
+    @Override
+    public CommandResult createHardLink(String existingPath, String newPath, ShellContext context) {
+        try {
+            DirectoryNode currentDir = getCurrentDir(context);
+            manager.createHardLink(existingPath, newPath, currentDir, context.getCurrentUser());
+            return CommandResult.success();
+        } catch (FileSystemException e) {
+            return CommandResult.failure(e.getMessage());
+        }
+    }
 }
