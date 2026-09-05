@@ -47,7 +47,7 @@ public class FileSystemManager {
         return root;
     }
 
-    public Inode resolvePath(String path, DirectoryNode currentDir) {
+    public Inode resolvePath(String path, DirectoryNode currentDir) throws FileSystemException {
         return pathResolver.resolvePath(path, currentDir);
     }
 
@@ -104,6 +104,24 @@ public class FileSystemManager {
         lifecycleManager.incrementLinkCount(target);
     }
 
+    public void createSymlink(String targetPath, String linkPath, DirectoryNode currentDir, User currentUser) throws FileSystemException {
+        DirectoryNode parent = pathResolver.resolveParentDirectory(linkPath, currentDir);
+        if (parent == null) throw new FileNotFoundException("Parent directory does not exist for new link");
+
+        String linkName = pathResolver.extractName(linkPath);
+        
+        if (parent.getChild(linkName) != null) {
+            throw new FileSystemException("File already exists: " + linkPath);
+        }
+        
+        validator.validateCreation(parent, linkName, currentUser);
+
+        com.rohith.javavirtualos.filesystem.model.SymlinkNode symlink = 
+            new com.rohith.javavirtualos.filesystem.model.SymlinkNode(currentUser.getUsername(), targetPath);
+        parent.addChild(linkName, symlink);
+        lifecycleManager.incrementLinkCount(symlink);
+    }
+
     public void remove(String path, DirectoryNode currentDir, String currentActivePath, boolean isDirectoryCommand, User currentUser) throws FileSystemException {
         DirectoryNode parent = pathResolver.resolveParentDirectory(path, currentDir);
         if (parent == null) throw new FileNotFoundException("Parent directory does not exist");
@@ -134,6 +152,22 @@ public class FileSystemManager {
         parent.removeChild(name);
         lifecycleManager.decrementLinkCount(target);
     }
+
+    public String readlink(String path, DirectoryNode currentDir, User currentUser) throws FileSystemException {
+        DirectoryNode parent = pathResolver.resolveParentDirectory(path, currentDir);
+        if (parent == null) throw new FileNotFoundException("Parent directory does not exist");
+        String name = pathResolver.extractName(path);
+        Inode target = parent.getChild(name);
+        
+        if (target == null) throw new FileNotFoundException(path);
+        if (!(target instanceof com.rohith.javavirtualos.filesystem.model.SymlinkNode)) {
+            throw new FileSystemException(path + " is not a symbolic link");
+        }
+        
+        validator.validateRead(target, currentUser);
+        return ((com.rohith.javavirtualos.filesystem.model.SymlinkNode) target).getTargetPath();
+    }
+
     public void validateReadAccess(Inode target, User currentUser) throws FileSystemException {
         validator.validateRead(target, currentUser);
     }
