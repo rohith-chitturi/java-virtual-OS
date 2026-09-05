@@ -1,7 +1,14 @@
 package com.rohith.javavirtualos.filesystem;
 
+import com.rohith.javavirtualos.exceptions.FileSystemException;
+import com.rohith.javavirtualos.exceptions.TooManySymlinksException;
 import com.rohith.javavirtualos.filesystem.model.DirectoryNode;
 import com.rohith.javavirtualos.filesystem.model.Inode;
+import com.rohith.javavirtualos.filesystem.model.SymlinkNode;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Stack;
 
 /**
  * Helper to resolve string paths (absolute or relative) into Inodes.
@@ -9,17 +16,26 @@ import com.rohith.javavirtualos.filesystem.model.Inode;
 public class PathResolver {
     
     private final DirectoryNode root;
+    private static final int MAX_SYMLINK_DEPTH = 10;
 
     public PathResolver(DirectoryNode root) {
         this.root = root;
     }
 
-    public Inode resolvePath(String path, DirectoryNode currentDir) {
+    public Inode resolvePath(String path, DirectoryNode currentDir) throws FileSystemException {
+        return resolvePathInternal(path, currentDir, 0, new HashSet<>());
+    }
+
+    private Inode resolvePathInternal(String path, DirectoryNode currentDir, int depth, Set<Long> visitedSymlinks) throws FileSystemException {
+        if (depth >= MAX_SYMLINK_DEPTH) {
+            throw new TooManySymlinksException(path);
+        }
+
         if (path == null || path.isEmpty()) {
             return currentDir;
         }
 
-        java.util.Stack<Inode> pathStack = new java.util.Stack<>();
+        Stack<Inode> pathStack = new Stack<>();
         
         DirectoryNode startNode = currentDir;
         
@@ -28,7 +44,7 @@ public class PathResolver {
             startNode = root;
             path = path.substring(1); // strip leading slash
         } else if (path.startsWith("~")) {
-            Inode resolvedHome = resolvePath("/home/javavm", root); // Assuming default home
+            Inode resolvedHome = resolvePathInternal("/home/javavm", root, depth, visitedSymlinks); // Assuming default home
             if (resolvedHome == null || !(resolvedHome instanceof DirectoryNode)) {
                 startNode = root;
             } else {
@@ -66,7 +82,23 @@ public class PathResolver {
             if (child == null) {
                 return null; // Not found
             }
-            pathStack.push(child);
+
+            if (child instanceof SymlinkNode symlink) {
+                if (visitedSymlinks.contains(symlink.getInodeId())) {
+                    throw new TooManySymlinksException("Circular symlink detected at " + part);
+                }
+                visitedSymlinks.add(symlink.getInodeId());
+                
+                String targetPath = symlink.getTargetPath();
+                // Resolve the target relative to the directory containing the symlink
+                Inode resolvedTarget = resolvePathInternal(targetPath, dir, depth + 1, visitedSymlinks);
+                if (resolvedTarget == null) {
+                    return null; // Dangling link during traversal
+                }
+                pathStack.push(resolvedTarget);
+            } else {
+                pathStack.push(child);
+            }
         }
 
         return pathStack.peek();
@@ -76,7 +108,7 @@ public class PathResolver {
      * Helper to get the parent directory of a target path.
      * Example: "/usr/bin/java" -> returns the DirectoryNode for "/usr/bin".
      */
-    public DirectoryNode resolveParentDirectory(String path, DirectoryNode currentDir) {
+    public DirectoryNode resolveParentDirectory(String path, DirectoryNode currentDir) throws FileSystemException {
         if (path.equals("/")) return null; // Root has no parent
         
         int lastSlash = path.lastIndexOf('/');
