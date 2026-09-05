@@ -36,7 +36,8 @@ public class ShellParser {
         List<ParsedCommand> commands = new ArrayList<>();
         
         for (String part : pipelineParts) {
-            ParsedCommand cmd = parseSingleCommand(part.trim());
+            String expandedPart = expandAliases(part.trim());
+            ParsedCommand cmd = parseSingleCommand(expandedPart);
             if (cmd != null) {
                 commands.add(cmd);
             } else {
@@ -125,6 +126,39 @@ public class ShellParser {
         } catch (Exception e) {
             context.getOut().println("Error executing command: " + e.getMessage());
         }
+    }
+
+    private String expandAliases(String part) {
+        if (part == null || part.isEmpty()) return part;
+        
+        String[] tokens = part.split("\\s+", 2);
+        String cmdName = tokens[0];
+        
+        java.util.Set<String> expanded = new java.util.HashSet<>();
+        String currentName = cmdName;
+        
+        // Prevent infinite recursion by tracking expanded aliases
+        while (context.getAliases().containsKey(currentName)) {
+            if (expanded.contains(currentName)) {
+                break; // Circular reference detected
+            }
+            expanded.add(currentName);
+            
+            String aliasValue = context.getAliases().get(currentName);
+            // We only expand the first word recursively if it's just a simple alias chain
+            String[] aliasTokens = aliasValue.split("\\s+", 2);
+            currentName = aliasTokens[0];
+            
+            // Reconstruct the full command
+            if (tokens.length > 1) {
+                part = aliasValue + " " + tokens[1];
+                tokens = part.split("\\s+", 2);
+            } else {
+                part = aliasValue;
+            }
+        }
+        
+        return part;
     }
 
     private ParsedCommand parseSingleCommand(String part) {

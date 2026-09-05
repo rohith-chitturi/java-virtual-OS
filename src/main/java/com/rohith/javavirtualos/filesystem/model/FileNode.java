@@ -7,8 +7,8 @@ public class FileNode extends Inode {
 
     private String content;
 
-    public FileNode(String name, String owner, DirectoryNode parent) {
-        super(name, owner, parent);
+    public FileNode(String owner) {
+        super(owner);
         this.content = "";
     }
 

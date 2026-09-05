@@ -165,13 +165,18 @@ public class VirtualMachine {
             }
             case SYSCALL: {
                 if (stats != null) stats.incrementSystemCallsInvoked();
-                // SYSCALL ID_REG, ARG1_REG, ARG2_REG
-                // or SYSCALL ID_VAL
                 int syscallId = parseOperand(instr.getOperand(0));
                 int arg1 = 0;
                 int arg2 = 0;
+                String stringArg = null;
+                
                 if (instr.getOperands().length > 1) {
-                    arg1 = parseOperand(instr.getOperand(1));
+                    String op1 = instr.getOperand(1);
+                    if (op1.startsWith("\"") && op1.endsWith("\"")) {
+                        stringArg = op1.substring(1, op1.length() - 1);
+                    } else {
+                        arg1 = parseOperand(op1);
+                    }
                 }
                 if (instr.getOperands().length > 2) {
                     arg2 = parseOperand(instr.getOperand(2));
@@ -183,7 +188,7 @@ public class VirtualMachine {
                     return ExecutionResult.EXIT(arg1);
                 }
                 
-                return ExecutionResult.SYSCALL(new SystemCallRequest(syscallId, arg1, arg2));
+                return ExecutionResult.SYSCALL(new SystemCallRequest(syscallId, arg1, arg2, stringArg));
             }
             case EXIT: {
                 this.exitCode = parseOperand(instr.getOperand(0));

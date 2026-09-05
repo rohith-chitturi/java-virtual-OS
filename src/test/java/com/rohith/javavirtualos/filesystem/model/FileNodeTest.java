@@ -11,9 +11,9 @@ public class FileNodeTest {
 
     @BeforeEach
     public void setUp() {
-        root = new DirectoryNode("", "root", null);
-        file = new FileNode("test.txt", "user", root);
-        root.addChild(file);
+        root = new DirectoryNode("root");
+        file = new FileNode("user");
+        root.addChild("test.txt", file);
     }
 
     @Test

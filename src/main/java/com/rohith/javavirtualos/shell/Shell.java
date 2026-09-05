@@ -52,6 +52,7 @@ public class Shell {
         commandRegistry.register(new VersionCommand());
         commandRegistry.register(new HelpCommand(commandRegistry));
         commandRegistry.register(new HistoryCommand(history));
+        commandRegistry.register(new AliasCommand());
         
         // User Commands
         commandRegistry.register(new WhoamiCommand());
@@ -59,7 +60,7 @@ public class Shell {
         commandRegistry.register(new UseraddCommand(userManager));
         
         // Process Commands
-        commandRegistry.register(new PsCommand(processService));
+        commandRegistry.register(new PsCommand(fsService));
         commandRegistry.register(new PstreeCommand(processService));
         commandRegistry.register(new ThreadsCommand(processService));
         commandRegistry.register(new KillCommand(processService));
@@ -71,6 +72,11 @@ public class Shell {
         commandRegistry.register(new RunQueueCommand(processService));
         commandRegistry.register(new BenchmarkSchedulerCommand());
         commandRegistry.register(new VmMapCommand(processService));
+        commandRegistry.register(new TopCommand(fsService));
+        commandRegistry.register(new FreeCommand(fsService));
+        commandRegistry.register(new VmstatCommand(fsService));
+        commandRegistry.register(new IostatCommand(fsService));
+        commandRegistry.register(new DmesgCommand(fsService));
         
         // FS Commands
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.MkdirCommand(fsService));
@@ -90,6 +96,7 @@ public class Shell {
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.FindCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.WriteCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.AppendCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.LnCommand(fsService));
         
         // Network Commands
         commandRegistry.register(new IfConfigCommand(networkManager));

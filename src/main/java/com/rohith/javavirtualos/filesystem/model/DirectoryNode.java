@@ -9,10 +9,10 @@ import java.util.Map;
  */
 public class DirectoryNode extends Inode {
 
-    private final Map<String, Inode> children;
+    private final Map<String, DirectoryEntry> children;
 
-    public DirectoryNode(String name, String owner, DirectoryNode parent) {
-        super(name, owner, parent);
+    public DirectoryNode(String owner) {
+        super(owner);
         this.children = new HashMap<>();
     }
 
@@ -24,29 +24,40 @@ public class DirectoryNode extends Inode {
     @Override
     public long calculateSize() {
         long total = 0;
-        for (Inode child : children.values()) {
-            total += child.calculateSize();
+        for (DirectoryEntry entry : children.values()) {
+            total += entry.getInode().calculateSize();
         }
         return total;
     }
 
-    public void addChild(Inode child) {
-        children.put(child.getName(), child);
-        child.setParent(this);
+    public void addChild(String name, Inode child) {
+        DirectoryEntry entry = new DirectoryEntry(name, child);
+        children.put(name, entry);
         metadata.updateModified();
     }
 
     public void removeChild(String name) {
-        children.remove(name);
-        metadata.updateModified();
+        DirectoryEntry entry = children.remove(name);
+        if (entry != null) {
+            metadata.updateModified();
+        }
     }
 
     public Inode getChild(String name) {
+        DirectoryEntry entry = children.get(name);
+        return entry != null ? entry.getInode() : null;
+    }
+    
+    public DirectoryEntry getChildEntry(String name) {
         return children.get(name);
     }
 
-    public Collection<Inode> getChildren() {
+    public Collection<DirectoryEntry> getEntries() {
         return children.values();
+    }
+
+    public Collection<Inode> getChildren() {
+        return children.values().stream().map(DirectoryEntry::getInode).toList();
     }
     
     public boolean hasChild(String name) {

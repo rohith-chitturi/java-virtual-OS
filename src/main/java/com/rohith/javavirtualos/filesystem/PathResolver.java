@@ -14,14 +14,13 @@ public class PathResolver {
         this.root = root;
     }
 
-    /**
-     * Resolves a path to the corresponding Inode.
-     */
     public Inode resolvePath(String path, DirectoryNode currentDir) {
         if (path == null || path.isEmpty()) {
             return currentDir;
         }
 
+        java.util.Stack<Inode> pathStack = new java.util.Stack<>();
+        
         DirectoryNode startNode = currentDir;
         
         // Handle absolute paths and home shortcut
@@ -38,12 +37,13 @@ public class PathResolver {
             path = path.length() > 1 ? path.substring(2) : "";
         }
 
+        pathStack.push(startNode);
+
         if (path.isEmpty()) {
             return startNode;
         }
 
         String[] parts = path.split("/");
-        Inode currentNode = startNode;
 
         for (String part : parts) {
             if (part.isEmpty() || part.equals(".")) {
@@ -51,12 +51,13 @@ public class PathResolver {
             }
             
             if (part.equals("..")) {
-                if (currentNode.getParent() != null) {
-                    currentNode = currentNode.getParent();
+                if (pathStack.size() > 1) { // Never pop the root of our traversal context
+                    pathStack.pop();
                 }
                 continue;
             }
 
+            Inode currentNode = pathStack.peek();
             if (!(currentNode instanceof DirectoryNode dir)) {
                 return null; // Path implies traversal but node is not a directory
             }
@@ -65,10 +66,10 @@ public class PathResolver {
             if (child == null) {
                 return null; // Not found
             }
-            currentNode = child;
+            pathStack.push(child);
         }
 
-        return currentNode;
+        return pathStack.peek();
     }
     
     /**

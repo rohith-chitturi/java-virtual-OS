@@ -17,9 +17,9 @@ public class FileSystemValidatorTest {
     @BeforeEach
     public void setUp() {
         validator = new FileSystemValidator();
-        root = new DirectoryNode("", "root", null);
-        userDir = new DirectoryNode("user", "user", root);
-        root.addChild(userDir);
+        root = new DirectoryNode("root");
+        userDir = new DirectoryNode("user");
+        root.addChild("user", userDir);
         testUser = new User("user", "pass");
     }
 
@@ -48,19 +48,19 @@ public class FileSystemValidatorTest {
 
     @Test
     public void testValidateCreationDuplicate() {
-        DirectoryNode subDir = new DirectoryNode("docs", "user", userDir);
-        userDir.addChild(subDir);
+        DirectoryNode subDir = new DirectoryNode("user");
+        userDir.addChild("docs", subDir);
         
         assertThrows(FileSystemException.class, () -> validator.validateCreation(userDir, "docs", testUser));
     }
 
     @Test
     public void testValidateDeletionRoot() {
-        assertThrows(FileSystemException.class, () -> validator.validateDeletion(root, userDir, testUser));
+        assertThrows(FileSystemException.class, () -> validator.validateDeletion(root, root, "/", "/", testUser));
     }
 
     @Test
     public void testValidateDeletionCurrentActive() {
-        assertThrows(FileSystemException.class, () -> validator.validateDeletion(userDir, userDir, testUser));
+        assertThrows(FileSystemException.class, () -> validator.validateDeletion(userDir, root, "/user", "/user", testUser));
     }
 }
