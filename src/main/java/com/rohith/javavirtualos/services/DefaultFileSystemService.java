@@ -245,4 +245,26 @@ public class DefaultFileSystemService implements FileSystemService {
             return CommandResult.failure(e.getMessage());
         }
     }
+
+    @Override
+    public CommandResult createSymlink(String targetPath, String linkPath, ShellContext context) {
+        try {
+            DirectoryNode currentDir = getCurrentDir(context);
+            manager.createSymlink(targetPath, linkPath, currentDir, context.getCurrentUser());
+            return CommandResult.success();
+        } catch (FileSystemException e) {
+            return CommandResult.failure(e.getMessage());
+        }
+    }
+
+    @Override
+    public CommandResult readlink(String path, ShellContext context) {
+        try {
+            DirectoryNode currentDir = getCurrentDir(context);
+            String target = manager.readlink(path, currentDir, context.getCurrentUser());
+            return CommandResult.success(target);
+        } catch (FileSystemException e) {
+            return CommandResult.failure(e.getMessage());
+        }
+    }
 }

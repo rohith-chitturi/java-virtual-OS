@@ -7,31 +7,28 @@ import com.rohith.javavirtualos.shell.ShellContext;
 import com.rohith.javavirtualos.shell.stream.VirtualInput;
 import com.rohith.javavirtualos.shell.stream.VirtualOutput;
 
-public class LnCommand implements Command {
+public class ReadlinkCommand implements Command {
     private final FileSystemService fsService;
 
-    public LnCommand(FileSystemService fsService) {
+    public ReadlinkCommand(FileSystemService fsService) {
         this.fsService = fsService;
     }
 
     @Override
     public String getName() {
-        return "ln";
+        return "readlink";
     }
 
     @Override
     public String getDescription() {
-        return "Create a hard link to an existing file.";
+        return "Print value of a symbolic link.";
     }
 
     @Override
     public CommandResult execute(String[] args, ShellContext context) {
-        if (args.length == 3 && args[0].equals("-s")) {
-            return fsService.createSymlink(args[1], args[2], context);
-        } else if (args.length == 2) {
-            return fsService.createHardLink(args[0], args[1], context);
-        } else {
-            return CommandResult.failure("Usage: ln [-s] <target> <link_name>");
+        if (args.length != 1) {
+            return CommandResult.failure("Usage: readlink <path>");
         }
+        return fsService.readlink(args[0], context);
     }
 }

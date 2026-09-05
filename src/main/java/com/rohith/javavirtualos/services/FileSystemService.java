@@ -20,4 +20,6 @@ public interface FileSystemService {
     CommandResult appendFile(String path, String content, ShellContext context);
     CommandResult findFile(String path, String pattern, ShellContext context);
     CommandResult createHardLink(String existingPath, String newPath, ShellContext context);
+    CommandResult createSymlink(String targetPath, String linkPath, ShellContext context);
+    CommandResult readlink(String path, ShellContext context);
 }
