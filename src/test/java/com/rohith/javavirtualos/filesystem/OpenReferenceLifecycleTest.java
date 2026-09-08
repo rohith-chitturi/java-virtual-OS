@@ -30,7 +30,7 @@ public class OpenReferenceLifecycleTest {
     @Test
     public void testOpenIncrementsReferenceCount() throws FileSystemException {
         manager.createFile("/home/a.txt", root, testUser);
-        Inode file = manager.resolvePath("/home/a.txt", root);
+        Inode file = manager.resolvePath("/home/a.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
 
         OpenFile openFile = new OpenFile(file, manager.getLifecycleManager());
         manager.getLifecycleManager().incrementOpenReference(file);
@@ -41,7 +41,7 @@ public class OpenReferenceLifecycleTest {
     @Test
     public void testUnlinkDoesNotReclaimOpenInode() throws FileSystemException {
         manager.createFile("/home/a.txt", root, testUser);
-        Inode file = manager.resolvePath("/home/a.txt", root);
+        Inode file = manager.resolvePath("/home/a.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
 
         OpenFile openFile = new OpenFile(file, manager.getLifecycleManager());
         manager.getLifecycleManager().incrementOpenReference(file);
@@ -56,7 +56,7 @@ public class OpenReferenceLifecycleTest {
     @Test
     public void testCloseDecrementsReferenceCount() throws FileSystemException {
         manager.createFile("/home/a.txt", root, testUser);
-        Inode file = manager.resolvePath("/home/a.txt", root);
+        Inode file = manager.resolvePath("/home/a.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
 
         OpenFile openFile = new OpenFile(file, manager.getLifecycleManager());
         manager.getLifecycleManager().incrementOpenReference(file);
@@ -70,7 +70,7 @@ public class OpenReferenceLifecycleTest {
     @Test
     public void testFinalCloseReclaimsInode() throws FileSystemException {
         manager.createFile("/home/a.txt", root, testUser);
-        Inode file = manager.resolvePath("/home/a.txt", root);
+        Inode file = manager.resolvePath("/home/a.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
 
         OpenFile openFile = new OpenFile(file, manager.getLifecycleManager());
         manager.getLifecycleManager().incrementOpenReference(file);
@@ -93,7 +93,7 @@ public class OpenReferenceLifecycleTest {
         manager.remove("/tmp", root, "/", false, testUser); // Clean it up since root has /tmp maybe? No, root starts empty except what we add. Let's use /home.
         
         manager.createFile("/home/data.txt", root, testUser);
-        FileNode file = (FileNode) manager.resolvePath("/home/data.txt", root);
+        FileNode file = (FileNode) manager.resolvePath("/home/data.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
         file.setContent("hello");
 
         OpenFile openFile = new OpenFile(file, manager.getLifecycleManager());

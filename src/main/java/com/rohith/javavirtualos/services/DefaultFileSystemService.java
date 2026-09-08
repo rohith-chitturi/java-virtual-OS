@@ -19,20 +19,33 @@ public class DefaultFileSystemService implements FileSystemService {
     }
 
     private DirectoryNode getCurrentDir(ShellContext context) throws FileSystemException {
-        return manager.resolveDirectory(context.getCurrentDirectory(), manager.getRoot());
+        return manager.resolveDirectory(context.getCurrentDirectory(), manager.getRoot(), context.getCurrentUser());
     }
 
     @Override
     public CommandResult listDirectory(String path, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            DirectoryNode targetDir = path == null ? currentDir : manager.resolveDirectory(path, currentDir);
+            // Must use context.getCurrentUser() to properly resolve and validate directory path
+            DirectoryNode targetDir = path == null ? currentDir : manager.resolveDirectory(path, currentDir, context.getCurrentUser());
             
             StringBuilder sb = new StringBuilder();
-            Collection<DirectoryEntry> entries = targetDir.getEntries();
-            for (DirectoryEntry entry : entries) {
-                String type = entry.getInode() instanceof DirectoryNode ? "[DIR] " : "[FILE]";
-                sb.append(String.format("%-7s %s%n", type, entry.getName()));
+            Collection<com.rohith.javavirtualos.filesystem.model.DirectoryEntry> entries = targetDir.getEntries();
+            for (com.rohith.javavirtualos.filesystem.model.DirectoryEntry entry : entries) {
+                com.rohith.javavirtualos.filesystem.model.Inode inode = entry.getInode();
+                com.rohith.javavirtualos.filesystem.model.FileMetadata metadata = inode.getMetadata();
+                
+                String permissions = metadata.getMode().toSymbolicString(inode.getType());
+                String owner = metadata.getOwner();
+                String group = metadata.getGroup();
+                long size = metadata.getSize();
+                String name = entry.getName();
+                
+                if (inode instanceof com.rohith.javavirtualos.filesystem.model.SymlinkNode sym) {
+                    name = name + " -> " + sym.getTargetPath();
+                }
+
+                sb.append(String.format("%s %-8s %-8s %6d %s%n", permissions, owner, group, size, name));
             }
             return CommandResult.success(sb.toString().trim());
         } catch (FileSystemException e) {
@@ -77,7 +90,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult changeDirectory(String path, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            DirectoryNode targetDir = manager.resolveDirectory(path, currentDir);
+            DirectoryNode newDir = manager.resolveDirectory(path, currentDir, context.getCurrentUser());
             // Need absolute path. We can construct it by resolving parts or simple string manipulation.
             String newPath;
             if (path.startsWith("/")) {
@@ -118,7 +131,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult printTree(String path, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            DirectoryNode targetDir = path == null ? currentDir : manager.resolveDirectory(path, currentDir);
+            DirectoryNode targetDir = path == null ? currentDir : manager.resolveDirectory(path, currentDir, context.getCurrentUser());
             StringBuilder sb = new StringBuilder();
             String rootName = path == null ? context.getCurrentDirectory() : path;
             int lastSlash = rootName.lastIndexOf('/');
@@ -147,7 +160,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult catFile(String path, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            Inode node = manager.resolvePath(path, currentDir);
+            Inode node = manager.resolvePath(path, currentDir, context.getCurrentUser());
             if (node == null) return CommandResult.failure("File not found: " + path);
             if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
             
@@ -162,7 +175,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult readExecutable(String path, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            Inode node = manager.resolvePath(path, currentDir);
+            Inode node = manager.resolvePath(path, currentDir, context.getCurrentUser());
             if (node == null) return CommandResult.failure("File not found: " + path);
             if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
             
@@ -177,10 +190,10 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult writeFile(String path, String content, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            Inode node = manager.resolvePath(path, currentDir);
+            Inode node = manager.resolvePath(path, currentDir, context.getCurrentUser());
             if (node == null) {
                 manager.createFile(path, currentDir, context.getCurrentUser());
-                node = manager.resolvePath(path, currentDir);
+                node = manager.resolvePath(path, currentDir, context.getCurrentUser());
             }
             if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
             
@@ -196,7 +209,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult appendFile(String path, String content, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            Inode node = manager.resolvePath(path, currentDir);
+            Inode node = manager.resolvePath(path, currentDir, context.getCurrentUser());
             if (node == null) return CommandResult.failure("File not found: " + path);
             if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
             
@@ -212,7 +225,7 @@ public class DefaultFileSystemService implements FileSystemService {
     public CommandResult findFile(String path, String pattern, ShellContext context) {
         try {
             DirectoryNode currentDir = getCurrentDir(context);
-            DirectoryNode targetDir = path == null ? currentDir : manager.resolveDirectory(path, currentDir);
+            DirectoryNode targetDir = path == null ? currentDir : manager.resolveDirectory(path, currentDir, context.getCurrentUser());
             StringBuilder sb = new StringBuilder();
             String rootPath = path == null ? context.getCurrentDirectory() : (path.startsWith("/") ? path : context.getCurrentDirectory() + "/" + path);
             findRecursive(targetDir, rootPath, pattern, sb);
@@ -263,6 +276,39 @@ public class DefaultFileSystemService implements FileSystemService {
             DirectoryNode currentDir = getCurrentDir(context);
             String target = manager.readlink(path, currentDir, context.getCurrentUser());
             return CommandResult.success(target);
+        } catch (FileSystemException e) {
+            return CommandResult.failure(e.getMessage());
+        }
+    }
+
+    @Override
+    public CommandResult chmod(String path, short mode, ShellContext context) {
+        try {
+            DirectoryNode currentDir = getCurrentDir(context);
+            manager.chmod(path, currentDir, mode, context.getCurrentUser());
+            return CommandResult.success();
+        } catch (FileSystemException e) {
+            return CommandResult.failure(e.getMessage());
+        }
+    }
+
+    @Override
+    public CommandResult chown(String path, String owner, ShellContext context) {
+        try {
+            DirectoryNode currentDir = getCurrentDir(context);
+            manager.chown(path, currentDir, owner, context.getCurrentUser());
+            return CommandResult.success();
+        } catch (FileSystemException e) {
+            return CommandResult.failure(e.getMessage());
+        }
+    }
+
+    @Override
+    public CommandResult chgrp(String path, String group, ShellContext context) {
+        try {
+            DirectoryNode currentDir = getCurrentDir(context);
+            manager.chgrp(path, currentDir, group, context.getCurrentUser());
+            return CommandResult.success();
         } catch (FileSystemException e) {
             return CommandResult.failure(e.getMessage());
         }

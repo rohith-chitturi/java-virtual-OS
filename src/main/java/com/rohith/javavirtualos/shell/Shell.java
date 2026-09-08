@@ -98,6 +98,9 @@ public class Shell {
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.AppendCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.LnCommand(fsService));
         commandRegistry.register(new com.rohith.javavirtualos.command.fs.ReadlinkCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.ChmodCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.ChownCommand(fsService));
+        commandRegistry.register(new com.rohith.javavirtualos.command.fs.ChgrpCommand(fsService));
         
         // Network Commands
         commandRegistry.register(new IfConfigCommand(networkManager));
