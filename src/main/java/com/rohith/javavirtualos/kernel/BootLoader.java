@@ -81,14 +81,14 @@ public class BootLoader {
         try {
             User rootUser = userManager.getUser("root");
             fsManager.createDirectory("/home", fsManager.getRoot(), rootUser);
-            fsManager.createDirectory("/home/root", fsManager.resolveDirectory("/home", fsManager.getRoot()), rootUser);
+            fsManager.createDirectory("/home/root", fsManager.resolveDirectory("/home", fsManager.getRoot(), rootUser), rootUser);
             // Helper for creating files if missing
             java.util.function.BiConsumer<String, String> createDemoIfMissing = (name, code) -> {
                 try {
                     String path = "/home/root/" + name;
-                    if (fsManager.resolvePath(path, fsManager.getRoot()) == null) {
-                        fsManager.createFile(name, fsManager.resolveDirectory("/home/root", fsManager.getRoot()), rootUser);
-                        com.rohith.javavirtualos.filesystem.model.Inode inode = fsManager.resolvePath(path, fsManager.getRoot());
+                    if (fsManager.resolvePath(path, fsManager.getRoot(), rootUser) == null) {
+                        fsManager.createFile(name, fsManager.resolveDirectory("/home/root", fsManager.getRoot(), rootUser), rootUser);
+                        com.rohith.javavirtualos.filesystem.model.Inode inode = fsManager.resolvePath(path, fsManager.getRoot(), rootUser);
                         if (inode instanceof com.rohith.javavirtualos.filesystem.model.FileNode) {
                             ((com.rohith.javavirtualos.filesystem.model.FileNode) inode).setContent(code);
                         }

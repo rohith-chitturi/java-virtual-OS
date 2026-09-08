@@ -32,7 +32,7 @@ public class SymlinkTest {
         manager.createFile("/home/user/data.txt", root, testUser);
         manager.createSymlink("/home/user/data.txt", "/home/user/link", root, testUser);
 
-        Inode symlink = manager.resolvePath("/home/user/link", root);
+        Inode symlink = manager.resolvePath("/home/user/link", root, new com.rohith.javavirtualos.kernel.User("root", null));
         assertNotNull(symlink);
         assertTrue(symlink instanceof FileNode); // because resolvePath follows the link!
     }
@@ -40,12 +40,12 @@ public class SymlinkTest {
     @Test
     public void testReadThroughFileSymlink() throws FileSystemException {
         manager.createFile("/home/user/data.txt", root, testUser);
-        FileNode dataFile = (FileNode) manager.resolvePath("/home/user/data.txt", root);
+        FileNode dataFile = (FileNode) manager.resolvePath("/home/user/data.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
         dataFile.setContent("hello world");
 
         manager.createSymlink("/home/user/data.txt", "/home/user/link", root, testUser);
 
-        FileNode resolved = (FileNode) manager.resolvePath("/home/user/link", root);
+        FileNode resolved = (FileNode) manager.resolvePath("/home/user/link", root, new com.rohith.javavirtualos.kernel.User("root", null));
         assertEquals("hello world", resolved.getContent());
     }
 
@@ -54,7 +54,7 @@ public class SymlinkTest {
         manager.createDirectory("/home/user/docs", root, testUser);
         manager.createSymlink("/home/user/docs", "/home/user/docs_link", root, testUser);
 
-        Inode resolved = manager.resolvePath("/home/user/docs_link", root);
+        Inode resolved = manager.resolvePath("/home/user/docs_link", root, new com.rohith.javavirtualos.kernel.User("root", null));
         assertTrue(resolved instanceof DirectoryNode);
     }
 
@@ -64,7 +64,7 @@ public class SymlinkTest {
         manager.createFile("/home/user/docs/file.txt", root, testUser);
         manager.createSymlink("/home/user/docs", "/home/user/docs_link", root, testUser);
 
-        Inode file = manager.resolvePath("/home/user/docs_link/file.txt", root);
+        Inode file = manager.resolvePath("/home/user/docs_link/file.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
         assertNotNull(file);
         assertTrue(file instanceof FileNode);
     }
@@ -76,7 +76,7 @@ public class SymlinkTest {
         
         manager.createSymlink("../data/file.txt", "/home/user/link", root, testUser);
 
-        Inode resolved = manager.resolvePath("/home/user/link", root);
+        Inode resolved = manager.resolvePath("/home/user/link", root, new com.rohith.javavirtualos.kernel.User("root", null));
         assertNotNull(resolved);
         assertTrue(resolved instanceof FileNode);
     }
@@ -86,7 +86,7 @@ public class SymlinkTest {
         manager.createFile("/home/user/file.txt", root, testUser);
         manager.createSymlink("/home/user/file.txt", "/home/user/link", root, testUser);
 
-        Inode resolved = manager.resolvePath("/home/user/link", root);
+        Inode resolved = manager.resolvePath("/home/user/link", root, new com.rohith.javavirtualos.kernel.User("root", null));
         assertNotNull(resolved);
         assertTrue(resolved instanceof FileNode);
     }
@@ -97,7 +97,7 @@ public class SymlinkTest {
         manager.createSymlink("/home/user/file.txt", "/home/user/link1", root, testUser);
         manager.createSymlink("/home/user/link1", "/home/user/link2", root, testUser);
 
-        Inode resolved = manager.resolvePath("/home/user/link2", root);
+        Inode resolved = manager.resolvePath("/home/user/link2", root, new com.rohith.javavirtualos.kernel.User("root", null));
         assertNotNull(resolved);
         assertTrue(resolved instanceof FileNode);
     }
@@ -106,7 +106,7 @@ public class SymlinkTest {
     public void testDanglingSymlink() throws FileSystemException {
         manager.createSymlink("/home/does/not/exist", "/home/user/link", root, testUser);
         
-        Inode resolved = manager.resolvePath("/home/user/link", root);
+        Inode resolved = manager.resolvePath("/home/user/link", root, new com.rohith.javavirtualos.kernel.User("root", null));
         assertNull(resolved);
     }
 
@@ -116,7 +116,7 @@ public class SymlinkTest {
         manager.createSymlink("/home/user/a", "/home/user/b", root, testUser);
 
         assertThrows(TooManySymlinksException.class, () -> {
-            manager.resolvePath("/home/user/a", root);
+            manager.resolvePath("/home/user/a", root, new com.rohith.javavirtualos.kernel.User("root", null));
         });
     }
 
@@ -128,7 +128,7 @@ public class SymlinkTest {
         }
 
         assertThrows(TooManySymlinksException.class, () -> {
-            manager.resolvePath("/home/user/f15", root);
+            manager.resolvePath("/home/user/f15", root, new com.rohith.javavirtualos.kernel.User("root", null));
         });
     }
 
@@ -145,13 +145,13 @@ public class SymlinkTest {
         });
 
         // Target remains
-        assertNotNull(manager.resolvePath("/home/user/data.txt", root));
+        assertNotNull(manager.resolvePath("/home/user/data.txt", root, new com.rohith.javavirtualos.kernel.User("root", null)));
     }
 
     @Test
     public void testTargetLinkCountUnchanged() throws FileSystemException {
         manager.createFile("/home/user/data.txt", root, testUser);
-        Inode data = manager.resolvePath("/home/user/data.txt", root);
+        Inode data = manager.resolvePath("/home/user/data.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
         assertEquals(1, data.getLinkCount());
 
         manager.createSymlink("/home/user/data.txt", "/home/user/link", root, testUser);

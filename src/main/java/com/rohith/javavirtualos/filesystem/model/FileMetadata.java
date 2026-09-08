@@ -1,8 +1,5 @@
 package com.rohith.javavirtualos.filesystem.model;
 
-import java.util.EnumSet;
-import java.util.Set;
-
 /**
  * Metadata associated with any filesystem node.
  */
@@ -12,16 +9,17 @@ public class FileMetadata {
     private final long createdAt;
     private long modifiedAt;
     private String owner;
-    private Set<Permission> permissions;
-    private boolean readOnly;
+    private String group;
+    private FileMode mode;
 
     public FileMetadata(String owner) {
         this.size = 0;
         this.createdAt = System.currentTimeMillis();
         this.modifiedAt = this.createdAt;
         this.owner = owner;
-        this.permissions = EnumSet.of(Permission.READ, Permission.WRITE);
-        this.readOnly = false;
+        this.group = "users"; // default group
+        // Default modes can be customized by creation context (umask), but we provide a baseline
+        this.mode = new FileMode((short) 0644); 
     }
 
     public long getSize() { return size; }
@@ -35,9 +33,9 @@ public class FileMetadata {
     public String getOwner() { return owner; }
     public void setOwner(String owner) { this.owner = owner; updateModified(); }
 
-    public Set<Permission> getPermissions() { return permissions; }
-    public void setPermissions(Set<Permission> permissions) { this.permissions = permissions; updateModified(); }
+    public String getGroup() { return group; }
+    public void setGroup(String group) { this.group = group; updateModified(); }
 
-    public boolean isReadOnly() { return readOnly; }
-    public void setReadOnly(boolean readOnly) { this.readOnly = readOnly; updateModified(); }
+    public FileMode getMode() { return mode; }
+    public void setMode(FileMode mode) { this.mode = mode; updateModified(); }
 }

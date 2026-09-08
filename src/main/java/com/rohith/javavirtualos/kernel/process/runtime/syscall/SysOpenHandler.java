@@ -23,7 +23,7 @@ public class SysOpenHandler implements SystemCallHandler {
         
         try {
             // Resolve path from root
-            Inode node = fsManager.resolvePath(path, fsManager.getRoot());
+            Inode node = fsManager.resolvePath(path, fsManager.getRoot(), pcb.getOwner());
             
             if (node == null) {
                 if (mode == 1 || mode == 2) {
@@ -33,9 +33,9 @@ public class SysOpenHandler implements SystemCallHandler {
                     String parentPath = lastSlash > 0 ? path.substring(0, lastSlash) : "/";
                     String fileName = path.substring(lastSlash + 1);
                     
-                    com.rohith.javavirtualos.filesystem.model.DirectoryNode parent = fsManager.resolveDirectory(parentPath, fsManager.getRoot());
+                    com.rohith.javavirtualos.filesystem.model.DirectoryNode parent = fsManager.resolveDirectory(parentPath, fsManager.getRoot(), pcb.getOwner());
                     fsManager.createFile(fileName, parent, pcb.getOwner());
-                    node = fsManager.resolvePath(path, fsManager.getRoot());
+                    node = fsManager.resolvePath(path, fsManager.getRoot(), pcb.getOwner());
                 } else {
                     return SystemCallResult.error(-1); // File not found
                 }

@@ -27,6 +27,7 @@ public class FileSystemManager {
 
     public FileSystemManager() {
         this.root = new DirectoryNode("root");
+        this.root.getMetadata().setMode(new com.rohith.javavirtualos.filesystem.model.FileMode((short) 0755));
         this.pathResolver = new PathResolver(this.root);
         this.validator = new FileSystemValidator();
         this.lifecycleManager = new InodeLifecycleManager();
@@ -47,12 +48,12 @@ public class FileSystemManager {
         return root;
     }
 
-    public Inode resolvePath(String path, DirectoryNode currentDir) throws FileSystemException {
-        return pathResolver.resolvePath(path, currentDir);
+    public Inode resolvePath(String path, DirectoryNode currentDir, User currentUser) throws FileSystemException {
+        return pathResolver.resolvePath(path, currentDir, currentUser, securityManager);
     }
 
-    public DirectoryNode resolveDirectory(String path, DirectoryNode currentDir) throws FileSystemException {
-        Inode node = pathResolver.resolvePath(path, currentDir);
+    public DirectoryNode resolveDirectory(String path, DirectoryNode currentDir, User currentUser) throws FileSystemException {
+        Inode node = pathResolver.resolvePath(path, currentDir, currentUser, securityManager);
         if (node == null) {
             throw new FileNotFoundException(path);
         }
@@ -63,38 +64,40 @@ public class FileSystemManager {
     }
 
     public void createDirectory(String path, DirectoryNode currentDir, User currentUser) throws FileSystemException {
-        DirectoryNode parent = pathResolver.resolveParentDirectory(path, currentDir);
+        DirectoryNode parent = pathResolver.resolveParentDirectory(path, currentDir, currentUser, securityManager);
         if (parent == null) throw new FileNotFoundException("Parent directory does not exist");
         
         String name = pathResolver.extractName(path);
         validator.validateCreation(parent, name, currentUser);
 
         DirectoryNode newDir = new DirectoryNode(currentUser.getUsername());
+        newDir.getMetadata().setMode(new com.rohith.javavirtualos.filesystem.model.FileMode((short) (0777 & ~currentUser.getUmask())));
         parent.addChild(name, newDir);
         lifecycleManager.incrementLinkCount(newDir);
     }
 
     public void createFile(String path, DirectoryNode currentDir, User currentUser) throws FileSystemException {
-        DirectoryNode parent = pathResolver.resolveParentDirectory(path, currentDir);
+        DirectoryNode parent = pathResolver.resolveParentDirectory(path, currentDir, currentUser, securityManager);
         if (parent == null) throw new FileNotFoundException("Parent directory does not exist");
         
         String name = pathResolver.extractName(path);
         validator.validateCreation(parent, name, currentUser);
 
         FileNode newFile = new FileNode(currentUser.getUsername());
+        newFile.getMetadata().setMode(new com.rohith.javavirtualos.filesystem.model.FileMode((short) (0666 & ~currentUser.getUmask())));
         parent.addChild(name, newFile);
         lifecycleManager.incrementLinkCount(newFile);
     }
 
     public void createHardLink(String existingPath, String newPath, DirectoryNode currentDir, User currentUser) throws FileSystemException {
-        Inode target = pathResolver.resolvePath(existingPath, currentDir);
+        Inode target = pathResolver.resolvePath(existingPath, currentDir, currentUser, securityManager);
         if (target == null) throw new FileNotFoundException(existingPath);
         
         if (target.getType() == com.rohith.javavirtualos.filesystem.model.FileType.DIRECTORY) {
             throw new FileSystemException("Hard links not allowed for directories");
         }
 
-        DirectoryNode parent = pathResolver.resolveParentDirectory(newPath, currentDir);
+        DirectoryNode parent = pathResolver.resolveParentDirectory(newPath, currentDir, currentUser, securityManager);
         if (parent == null) throw new FileNotFoundException("Parent directory does not exist for new link");
         
         String linkName = pathResolver.extractName(newPath);
@@ -105,7 +108,7 @@ public class FileSystemManager {
     }
 
     public void createSymlink(String targetPath, String linkPath, DirectoryNode currentDir, User currentUser) throws FileSystemException {
-        DirectoryNode parent = pathResolver.resolveParentDirectory(linkPath, currentDir);
+        DirectoryNode parent = pathResolver.resolveParentDirectory(linkPath, currentDir, currentUser, securityManager);
         if (parent == null) throw new FileNotFoundException("Parent directory does not exist for new link");
 
         String linkName = pathResolver.extractName(linkPath);
@@ -118,12 +121,15 @@ public class FileSystemManager {
 
         com.rohith.javavirtualos.filesystem.model.SymlinkNode symlink = 
             new com.rohith.javavirtualos.filesystem.model.SymlinkNode(currentUser.getUsername(), targetPath);
+        // Symlinks always have 0777 permissions essentially, ignoring umask usually, 
+        // but we can set it explicitly for completeness:
+        symlink.getMetadata().setMode(new com.rohith.javavirtualos.filesystem.model.FileMode((short) 0777));
         parent.addChild(linkName, symlink);
         lifecycleManager.incrementLinkCount(symlink);
     }
 
     public void remove(String path, DirectoryNode currentDir, String currentActivePath, boolean isDirectoryCommand, User currentUser) throws FileSystemException {
-        DirectoryNode parent = pathResolver.resolveParentDirectory(path, currentDir);
+        DirectoryNode parent = pathResolver.resolveParentDirectory(path, currentDir, currentUser, securityManager);
         if (parent == null) throw new FileNotFoundException("Parent directory does not exist");
         String name = pathResolver.extractName(path);
         Inode target = parent.getChild(name);
@@ -153,8 +159,46 @@ public class FileSystemManager {
         lifecycleManager.decrementLinkCount(target);
     }
 
+    public void chmod(String path, DirectoryNode currentDir, short mode, User currentUser) throws FileSystemException {
+        Inode target = pathResolver.resolvePath(path, currentDir, currentUser, securityManager);
+        if (target == null) throw new FileNotFoundException(path);
+        
+        // Only owner or root can chmod
+        if (!"root".equals(currentUser.getUsername()) && !currentUser.getUsername().equals(target.getMetadata().getOwner())) {
+            throw new FileSystemException("Permission denied");
+        }
+        
+        target.getMetadata().setMode(new com.rohith.javavirtualos.filesystem.model.FileMode(mode));
+    }
+
+    public void chown(String path, DirectoryNode currentDir, String newOwner, User currentUser) throws FileSystemException {
+        Inode target = pathResolver.resolvePath(path, currentDir, currentUser, securityManager);
+        if (target == null) throw new FileNotFoundException(path);
+        
+        // Only root can chown
+        if (!"root".equals(currentUser.getUsername())) {
+            throw new FileSystemException("Permission denied: Only root can change ownership");
+        }
+        
+        target.getMetadata().setOwner(newOwner);
+    }
+
+    public void chgrp(String path, DirectoryNode currentDir, String newGroup, User currentUser) throws FileSystemException {
+        Inode target = pathResolver.resolvePath(path, currentDir, currentUser, securityManager);
+        if (target == null) throw new FileNotFoundException(path);
+        
+        // Root can change to any group. Owner can change to a group they belong to.
+        if (!"root".equals(currentUser.getUsername())) {
+            if (!currentUser.getUsername().equals(target.getMetadata().getOwner()) || !currentUser.getGroups().contains(newGroup)) {
+                throw new FileSystemException("Permission denied: Must be root or owner belonging to the target group");
+            }
+        }
+        
+        target.getMetadata().setGroup(newGroup);
+    }
+
     public String readlink(String path, DirectoryNode currentDir, User currentUser) throws FileSystemException {
-        DirectoryNode parent = pathResolver.resolveParentDirectory(path, currentDir);
+        DirectoryNode parent = pathResolver.resolveParentDirectory(path, currentDir, currentUser, securityManager);
         if (parent == null) throw new FileNotFoundException("Parent directory does not exist");
         String name = pathResolver.extractName(path);
         Inode target = parent.getChild(name);
@@ -181,18 +225,19 @@ public class FileSystemManager {
     }
     
     public void mountDevice(String path, DeviceNode deviceNode) throws FileSystemException {
-        DirectoryNode parent = pathResolver.resolveParentDirectory(path, root);
+        // Device mounting is kernel/root level, so we simulate a root user for this action
+        User sysRoot = new User("root", null);
+        DirectoryNode parent = pathResolver.resolveParentDirectory(path, this.root, sysRoot, securityManager);
         String name = pathResolver.extractName(path);
         if (parent == null) {
             String parentStr = path.substring(0, path.lastIndexOf('/'));
-            if (parentStr.isEmpty()) parentStr = "/";
             // For simplicity, create /dev if we're mounting there
             if (parentStr.equals("/dev")) {
                 try {
-                    parent = resolveDirectory("/dev", root);
+                    parent = resolveDirectory("/dev", this.root, sysRoot);
                 } catch (Exception e) {
                     parent = new DirectoryNode("root");
-                    root.addChild("dev", parent);
+                    this.root.addChild("dev", parent);
                 }
             } else {
                 throw new FileNotFoundException("Parent directory does not exist for mount: " + path);

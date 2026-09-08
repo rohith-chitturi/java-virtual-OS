@@ -26,10 +26,10 @@ public class HardLinkTest {
     @Test
     public void testCreateHardLink() throws FileSystemException {
         manager.createFile("/home/a.txt", root, testUser);
-        Inode fileA = manager.resolvePath("/home/a.txt", root);
+        Inode fileA = manager.resolvePath("/home/a.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
 
         manager.createHardLink("/home/a.txt", "/home/b.txt", root, testUser);
-        Inode fileB = manager.resolvePath("/home/b.txt", root);
+        Inode fileB = manager.resolvePath("/home/b.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
 
         assertEquals(fileA, fileB);
         assertEquals(fileA.getInodeId(), fileB.getInodeId());
@@ -38,7 +38,7 @@ public class HardLinkTest {
     @Test
     public void testLinkCountIncrements() throws FileSystemException {
         manager.createFile("/home/a.txt", root, testUser);
-        Inode fileA = manager.resolvePath("/home/a.txt", root);
+        Inode fileA = manager.resolvePath("/home/a.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
         assertEquals(1, fileA.getLinkCount());
 
         manager.createHardLink("/home/a.txt", "/home/b.txt", root, testUser);
@@ -49,20 +49,20 @@ public class HardLinkTest {
     public void testDeleteOneLinkPreservesInode() throws FileSystemException {
         manager.createFile("/home/a.txt", root, testUser);
         manager.createHardLink("/home/a.txt", "/home/b.txt", root, testUser);
-        Inode file = manager.resolvePath("/home/a.txt", root);
+        Inode file = manager.resolvePath("/home/a.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
 
         manager.remove("/home/a.txt", root, "/", false, testUser);
         
         assertEquals(1, file.getLinkCount());
-        assertNull(manager.resolvePath("/home/a.txt", root));
-        assertNotNull(manager.resolvePath("/home/b.txt", root));
+        assertNull(manager.resolvePath("/home/a.txt", root, new com.rohith.javavirtualos.kernel.User("root", null)));
+        assertNotNull(manager.resolvePath("/home/b.txt", root, new com.rohith.javavirtualos.kernel.User("root", null)));
     }
 
     @Test
     public void testDeleteFinalLinkRemovesInode() throws FileSystemException {
         manager.createFile("/home/a.txt", root, testUser);
         manager.createHardLink("/home/a.txt", "/home/b.txt", root, testUser);
-        Inode file = manager.resolvePath("/home/a.txt", root);
+        Inode file = manager.resolvePath("/home/a.txt", root, new com.rohith.javavirtualos.kernel.User("root", null));
 
         manager.remove("/home/a.txt", root, "/", false, testUser);
         manager.remove("/home/b.txt", root, "/", false, testUser);

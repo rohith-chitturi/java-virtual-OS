@@ -22,4 +22,7 @@ public interface FileSystemService {
     CommandResult createHardLink(String existingPath, String newPath, ShellContext context);
     CommandResult createSymlink(String targetPath, String linkPath, ShellContext context);
     CommandResult readlink(String path, ShellContext context);
+    CommandResult chmod(String path, short mode, ShellContext context);
+    CommandResult chown(String path, String owner, ShellContext context);
+    CommandResult chgrp(String path, String group, ShellContext context);
 }

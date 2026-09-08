@@ -5,14 +5,13 @@ import com.rohith.javavirtualos.exceptions.TooManySymlinksException;
 import com.rohith.javavirtualos.filesystem.model.DirectoryNode;
 import com.rohith.javavirtualos.filesystem.model.Inode;
 import com.rohith.javavirtualos.filesystem.model.SymlinkNode;
+import com.rohith.javavirtualos.kernel.SecurityManager;
+import com.rohith.javavirtualos.kernel.User;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 
-/**
- * Helper to resolve string paths (absolute or relative) into Inodes.
- */
 public class PathResolver {
     
     private final DirectoryNode root;
@@ -22,11 +21,11 @@ public class PathResolver {
         this.root = root;
     }
 
-    public Inode resolvePath(String path, DirectoryNode currentDir) throws FileSystemException {
-        return resolvePathInternal(path, currentDir, 0, new HashSet<>());
+    public Inode resolvePath(String path, DirectoryNode currentDir, User user, SecurityManager securityManager) throws FileSystemException {
+        return resolvePathInternal(path, currentDir, user, securityManager, 0, new HashSet<>());
     }
 
-    private Inode resolvePathInternal(String path, DirectoryNode currentDir, int depth, Set<Long> visitedSymlinks) throws FileSystemException {
+    private Inode resolvePathInternal(String path, DirectoryNode currentDir, User user, SecurityManager securityManager, int depth, Set<Long> visitedSymlinks) throws FileSystemException {
         if (depth >= MAX_SYMLINK_DEPTH) {
             throw new TooManySymlinksException(path);
         }
@@ -39,12 +38,11 @@ public class PathResolver {
         
         DirectoryNode startNode = currentDir;
         
-        // Handle absolute paths and home shortcut
         if (path.startsWith("/")) {
             startNode = root;
-            path = path.substring(1); // strip leading slash
+            path = path.substring(1); 
         } else if (path.startsWith("~")) {
-            Inode resolvedHome = resolvePathInternal("/home/javavm", root, depth, visitedSymlinks); // Assuming default home
+            Inode resolvedHome = resolvePathInternal("/home/javavm", root, user, securityManager, depth, visitedSymlinks); 
             if (resolvedHome == null || !(resolvedHome instanceof DirectoryNode)) {
                 startNode = root;
             } else {
@@ -53,6 +51,10 @@ public class PathResolver {
             path = path.length() > 1 ? path.substring(2) : "";
         }
 
+        // Before pushing startNode (which is a directory), we must be allowed to "execute" it to traverse it.
+        // Wait, currentDir or root should be already verified to reach it, but to traverse down from it, we check.
+        // POSIX checks execute permission on the directories *as* they are traversed.
+        
         pathStack.push(startNode);
 
         if (path.isEmpty()) {
@@ -67,7 +69,7 @@ public class PathResolver {
             }
             
             if (part.equals("..")) {
-                if (pathStack.size() > 1) { // Never pop the root of our traversal context
+                if (pathStack.size() > 1) { 
                     pathStack.pop();
                 }
                 continue;
@@ -75,12 +77,16 @@ public class PathResolver {
 
             Inode currentNode = pathStack.peek();
             if (!(currentNode instanceof DirectoryNode dir)) {
-                return null; // Path implies traversal but node is not a directory
+                return null; 
+            }
+            
+            if (securityManager != null && !securityManager.canExecute(user, dir)) {
+                throw new FileSystemException("Permission denied");
             }
 
             Inode child = dir.getChild(part);
             if (child == null) {
-                return null; // Not found
+                return null; 
             }
 
             if (child instanceof SymlinkNode symlink) {
@@ -90,10 +96,9 @@ public class PathResolver {
                 visitedSymlinks.add(symlink.getInodeId());
                 
                 String targetPath = symlink.getTargetPath();
-                // Resolve the target relative to the directory containing the symlink
-                Inode resolvedTarget = resolvePathInternal(targetPath, dir, depth + 1, visitedSymlinks);
+                Inode resolvedTarget = resolvePathInternal(targetPath, dir, user, securityManager, depth + 1, visitedSymlinks);
                 if (resolvedTarget == null) {
-                    return null; // Dangling link during traversal
+                    return null; 
                 }
                 pathStack.push(resolvedTarget);
             } else {
@@ -104,16 +109,12 @@ public class PathResolver {
         return pathStack.peek();
     }
     
-    /**
-     * Helper to get the parent directory of a target path.
-     * Example: "/usr/bin/java" -> returns the DirectoryNode for "/usr/bin".
-     */
-    public DirectoryNode resolveParentDirectory(String path, DirectoryNode currentDir) throws FileSystemException {
-        if (path.equals("/")) return null; // Root has no parent
+    public DirectoryNode resolveParentDirectory(String path, DirectoryNode currentDir, User user, SecurityManager securityManager) throws FileSystemException {
+        if (path.equals("/")) return null; 
         
         int lastSlash = path.lastIndexOf('/');
         if (lastSlash == -1) {
-            return currentDir; // Relative single token
+            return currentDir; 
         }
         if (lastSlash == 0 && path.length() == 1) {
             return root;
@@ -124,7 +125,7 @@ public class PathResolver {
             parentPath = "/";
         }
         
-        Inode parentNode = resolvePath(parentPath, currentDir);
+        Inode parentNode = resolvePath(parentPath, currentDir, user, securityManager);
         if (parentNode instanceof DirectoryNode) {
             return (DirectoryNode) parentNode;
         }
@@ -132,9 +133,6 @@ public class PathResolver {
         return null;
     }
     
-    /**
-     * Extracts just the final name component of a path.
-     */
     public String extractName(String path) {
         int lastSlash = path.lastIndexOf('/');
         return lastSlash == -1 ? path : path.substring(lastSlash + 1);
