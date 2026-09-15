@@ -75,6 +75,22 @@ public class BootLoader {
         FileSystemManager fsManager = new FileSystemManager();
         fsManager.setSecurityManager(securityManager);
         
+        java.io.File vdisk = new java.io.File("vdisk.img");
+        com.rohith.javavirtualos.kernel.filesystem.jvfs.JVFSBlockDevice blockDevice = new com.rohith.javavirtualos.kernel.filesystem.jvfs.JVFSBlockDevice(vdisk, 4096);
+        try { blockDevice.open(); } catch (java.io.IOException ignored) {}
+        
+        com.rohith.javavirtualos.kernel.filesystem.jvfs.SuperBlock sb = new com.rohith.javavirtualos.kernel.filesystem.jvfs.SuperBlock(1000, 10000);
+        com.rohith.javavirtualos.kernel.filesystem.jvfs.BitmapManager bm = new com.rohith.javavirtualos.kernel.filesystem.jvfs.BitmapManager(10000);
+        com.rohith.javavirtualos.kernel.filesystem.jvfs.BlockAllocator blockAllocator = new com.rohith.javavirtualos.kernel.filesystem.jvfs.BlockAllocator(blockDevice, sb, bm, new com.rohith.javavirtualos.kernel.filesystem.jvfs.FirstFitFreeBlockFinder(), 1);
+        
+        com.rohith.javavirtualos.filesystem.storage.DefaultFileStorage fileStorage = new com.rohith.javavirtualos.filesystem.storage.DefaultFileStorage(blockAllocator, blockDevice, 256);
+        fsManager.setFileStorage(fileStorage);
+        
+        systemContext.registerShutdownHook(() -> {
+            System.out.println("Shutting down FileSystemManager...");
+            fsManager.shutdown();
+        });
+        
         FileSystemService fsService = new DefaultFileSystemService(fsManager);
         eventBus.publish(new FileSystemMountedEvent("/"));
         
@@ -90,7 +106,9 @@ public class BootLoader {
                         fsManager.createFile(name, fsManager.resolveDirectory("/home/root", fsManager.getRoot(), rootUser), rootUser);
                         com.rohith.javavirtualos.filesystem.model.Inode inode = fsManager.resolvePath(path, fsManager.getRoot(), rootUser);
                         if (inode instanceof com.rohith.javavirtualos.filesystem.model.FileNode) {
-                            ((com.rohith.javavirtualos.filesystem.model.FileNode) inode).setContent(code);
+                            byte[] data = code.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                            fsManager.getFileStorage().write(inode, 0, data);
+                            inode.getMetadata().setSize(data.length);
                         }
                     }
                 } catch (Exception e) {
@@ -159,9 +177,9 @@ public class BootLoader {
         );
 
         SystemCallDispatcher syscallDispatcher = new SystemCallDispatcher(processManager, fsManager);
-        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_WRITE, new SysWriteHandler());
-        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_PRINT, new SysWriteHandler()); // Reusing write handler for print
-        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_READ, new SysReadHandler());
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_WRITE, new SysWriteHandler(fsManager));
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_PRINT, new SysWriteHandler(fsManager)); // Reusing write handler for print
+        syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_READ, new SysReadHandler(fsManager));
         syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_SLEEP, new SysSleepHandler());
         syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_YIELD, new SysYieldHandler());
         syscallDispatcher.registerHandler(SystemCallDispatcher.SYS_EXIT, new SysExitHandler());
