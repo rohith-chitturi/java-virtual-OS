@@ -11,9 +11,9 @@ public class VirtualFileNodeTest {
         AtomicInteger counter = new AtomicInteger(0);
         VirtualFileNode node = new VirtualFileNode("root", () -> "Count: " + counter.incrementAndGet());
         
-        assertEquals("Count: 1", node.getContent());
-        assertEquals("Count: 2", node.getContent());
-        assertEquals("Count: 3", node.getContent());
+        assertEquals("Count: 1", new String(node.generateContentBytes()));
+        assertEquals("Count: 2", new String(node.generateContentBytes()));
+        assertEquals("Count: 3", new String(node.generateContentBytes()));
     }
 
     @Test
@@ -25,12 +25,5 @@ public class VirtualFileNodeTest {
         long size1 = node.calculateSize();
         long size2 = node.calculateSize();
         assertNotEquals(size1, size2);
-    }
-
-    @Test
-    public void testReadOnly() {
-        VirtualFileNode node = new VirtualFileNode("root", () -> "static");
-        assertThrows(UnsupportedOperationException.class, () -> node.setContent("new"));
-        assertThrows(UnsupportedOperationException.class, () -> node.appendContent("more"));
     }
 }

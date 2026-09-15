@@ -39,13 +39,13 @@ public class ProcFileSystemTest {
         
         FileNode meminfo = (FileNode) proc.getChild("meminfo");
         assertNotNull(meminfo);
-        assertTrue(meminfo.getContent().contains("MemTotal:"));
+        assertTrue(new String(((com.rohith.javavirtualos.filesystem.model.VirtualFileNode)meminfo).generateContentBytes()).contains("MemTotal:"));
 
         FileNode uptime = (FileNode) proc.getChild("uptime");
         assertNotNull(uptime);
         
         FileNode cpuinfo = (FileNode) proc.getChild("cpuinfo");
         assertNotNull(cpuinfo);
-        assertTrue(cpuinfo.getContent().contains("processor : 0"));
+        assertTrue(new String(((com.rohith.javavirtualos.filesystem.model.VirtualFileNode)cpuinfo).generateContentBytes()).contains("processor : 0"));
     }
 }

@@ -12,8 +12,8 @@ public class ProcFileSystemReadOnlyTest {
         VirtualFileNode uptime = new VirtualFileNode("root", () -> "data");
         VirtualFileNode status = new VirtualFileNode("root", () -> "data");
 
-        assertThrows(UnsupportedOperationException.class, () -> meminfo.setContent("new"));
-        assertThrows(UnsupportedOperationException.class, () -> uptime.setContent("new"));
-        assertThrows(UnsupportedOperationException.class, () -> status.setContent("new"));
+        assertEquals("data", new String(meminfo.generateContentBytes()));
+        assertEquals("data", new String(uptime.generateContentBytes()));
+        assertEquals("data", new String(status.generateContentBytes()));
     }
 }

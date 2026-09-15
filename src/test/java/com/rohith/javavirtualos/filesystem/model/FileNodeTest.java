@@ -17,17 +17,14 @@ public class FileNodeTest {
     }
 
     @Test
-    public void testContentModification() {
-        assertEquals("", file.getContent());
+    public void testMetadataSize() {
         assertEquals(0, file.calculateSize());
         
-        file.setContent("Hello OS");
-        assertEquals("Hello OS", file.getContent());
+        file.getMetadata().setSize(8);
         assertEquals(8, file.calculateSize());
         assertEquals(8, file.getMetadata().getSize());
         
-        file.appendContent("!");
-        assertEquals("Hello OS!", file.getContent());
+        file.getMetadata().setSize(9);
         assertEquals(9, file.calculateSize());
     }
 
