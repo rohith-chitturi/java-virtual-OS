@@ -18,21 +18,10 @@ public class VirtualFileNode extends FileNode {
 
     @Override
     public long calculateSize() {
-        return getContent().length();
+        return generateContentBytes().length;
     }
 
-    @Override
-    public String getContent() {
-        return contentGenerator.get();
-    }
-
-    @Override
-    public void setContent(String content) {
-        throw new UnsupportedOperationException("Virtual files are read-only.");
-    }
-    
-    @Override
-    public void appendContent(String additional) {
-        throw new UnsupportedOperationException("Virtual files are read-only.");
+    public byte[] generateContentBytes() {
+        return contentGenerator.get().getBytes(java.nio.charset.StandardCharsets.UTF_8);
     }
 }

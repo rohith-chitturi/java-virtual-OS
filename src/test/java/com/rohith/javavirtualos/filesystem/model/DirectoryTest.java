@@ -34,7 +34,7 @@ public class DirectoryTest {
         root.addChild("usr", usr);
         root.addChild("hello.txt", textFile);
         
-        textFile.setContent("hello world");
+        textFile.getMetadata().setSize(11);
         
         assertEquals(11, root.calculateSize());
     }
