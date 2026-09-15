@@ -162,11 +162,16 @@ public class DefaultFileSystemService implements FileSystemService {
             DirectoryNode currentDir = getCurrentDir(context);
             Inode node = manager.resolvePath(path, currentDir, context.getCurrentUser());
             if (node == null) return CommandResult.failure("File not found: " + path);
-            if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
+            if (node instanceof DirectoryNode) return CommandResult.failure(path + " is a directory");
             
             manager.validateReadAccess(node, context.getCurrentUser());
-            return CommandResult.success(((FileNode) node).getContent());
-        } catch (FileSystemException e) {
+            long sizeToRead = node.calculateSize();
+            if (sizeToRead == 0 && node instanceof com.rohith.javavirtualos.filesystem.model.DeviceNode) {
+                sizeToRead = 4096; // Read a chunk for devices
+            }
+            byte[] data = manager.getFileStorage().read(node, 0, sizeToRead > 0 ? (int)sizeToRead : 4096);
+            return CommandResult.success(new String(data, java.nio.charset.StandardCharsets.UTF_8));
+        } catch (Exception e) {
             return CommandResult.failure(e.getMessage());
         }
     }
@@ -177,11 +182,12 @@ public class DefaultFileSystemService implements FileSystemService {
             DirectoryNode currentDir = getCurrentDir(context);
             Inode node = manager.resolvePath(path, currentDir, context.getCurrentUser());
             if (node == null) return CommandResult.failure("File not found: " + path);
-            if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
+            if (node instanceof DirectoryNode) return CommandResult.failure(path + " is a directory");
             
             manager.validateExecuteAccess(node, context.getCurrentUser());
-            return CommandResult.success(((FileNode) node).getContent());
-        } catch (FileSystemException e) {
+            byte[] data = manager.getFileStorage().read(node, 0, (int)node.calculateSize());
+            return CommandResult.success(new String(data, java.nio.charset.StandardCharsets.UTF_8));
+        } catch (Exception e) {
             return CommandResult.failure(e.getMessage());
         }
     }
@@ -195,12 +201,14 @@ public class DefaultFileSystemService implements FileSystemService {
                 manager.createFile(path, currentDir, context.getCurrentUser());
                 node = manager.resolvePath(path, currentDir, context.getCurrentUser());
             }
-            if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
+            if (node instanceof DirectoryNode) return CommandResult.failure(path + " is a directory");
             
             manager.validateWriteAccess(node, context.getCurrentUser());
-            ((FileNode) node).setContent(content);
+            byte[] data = content.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            manager.getFileStorage().write(node, 0, data);
+            node.getMetadata().setSize(data.length); // truncate logic
             return CommandResult.success();
-        } catch (FileSystemException e) {
+        } catch (Exception e) {
             return CommandResult.failure(e.getMessage());
         }
     }
@@ -211,12 +219,12 @@ public class DefaultFileSystemService implements FileSystemService {
             DirectoryNode currentDir = getCurrentDir(context);
             Inode node = manager.resolvePath(path, currentDir, context.getCurrentUser());
             if (node == null) return CommandResult.failure("File not found: " + path);
-            if (!(node instanceof FileNode)) return CommandResult.failure(path + " is a directory");
+            if (node instanceof DirectoryNode) return CommandResult.failure(path + " is a directory");
             
             manager.validateWriteAccess(node, context.getCurrentUser());
-            ((FileNode) node).appendContent(content);
+            manager.getFileStorage().write(node, node.calculateSize(), content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             return CommandResult.success();
-        } catch (FileSystemException e) {
+        } catch (Exception e) {
             return CommandResult.failure(e.getMessage());
         }
     }
