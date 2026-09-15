@@ -35,31 +35,28 @@ public class DeviceNode extends Inode {
         return FileType.DEVICE;
     }
 
-    public String getContent() {
-        if (!checkHealth()) return "";
+    public byte[] readDeviceBytes() {
+        if (!checkHealth()) return new byte[0];
         try {
             byte[] data = driver.read(4096);
             deviceManager.recordRead(driver, data.length);
-            return new String(data, StandardCharsets.UTF_8);
+            return data;
         } catch (IOException e) {
             deviceManager.recordError(driver, e.getMessage());
-            return "";
+            return new byte[0];
         }
     }
 
-    public void setContent(String content) {
-        if (!checkHealth()) return;
+    public int writeDeviceBytes(byte[] bytes) {
+        if (!checkHealth()) return 0;
         try {
-            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
             int written = driver.write(bytes);
             deviceManager.recordWrite(driver, written);
+            return written;
         } catch (IOException e) {
             deviceManager.recordError(driver, e.getMessage());
+            return 0;
         }
-    }
-    
-    public void appendContent(String additional) {
-        setContent(additional);
     }
     
     @Override

@@ -5,11 +5,12 @@ package com.rohith.javavirtualos.filesystem.model;
  */
 public class FileNode extends Inode {
 
-    private String content;
-
     public FileNode(String owner) {
         super(owner);
-        this.content = "";
+    }
+
+    public FileNode(long inodeId, String owner) {
+        super(inodeId, owner);
     }
 
     @Override
@@ -19,22 +20,6 @@ public class FileNode extends Inode {
 
     @Override
     public long calculateSize() {
-        return content.length();
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-        metadata.setSize(content.length());
-        metadata.updateModified();
-    }
-    
-    public void appendContent(String additional) {
-        this.content += additional;
-        metadata.setSize(this.content.length());
-        metadata.updateModified();
+        return metadata.getSize();
     }
 }
